@@ -1,0 +1,1296 @@
+<!--
+  CodeShield AI — Autonomous Code Security & Remediation Platform
+  © 2026 Lamis Alanazi. All rights reserved.
+  Built for the Tuwaiq Academy × SAIF program.
+-->
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="author" content="Lamis Alanazi">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CodeShield AI — Autonomous Code Security &amp; Remediation Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   CodeShield AI — AI-Powered Code Security & Auto-Remediation
+   ============================================================ */
+:root{
+  --bg:#070b14; --panel:#0d1321; --card:#111827; --card2:#151e30; --line:rgba(255,255,255,.08);
+  --text:#f4f7fb; --muted:#91a0b7;
+  --accent:#8cc8ff; --accent2:#b8a7ff; --accent-dim:rgba(140,200,255,.12);
+  --danger:#ff6f91; --warning:#ffc56b; --success:#77e0b5; --blue:#75bfff; --purple:#b49aff;
+  --shadow:0 20px 60px rgba(0,0,0,.30);
+}
+body.light{
+  --bg:#f5f7fb; --panel:#fff; --card:#fff; --card2:#eef2f8; --line:rgba(20,30,50,.10);
+  --text:#172033; --muted:#667085;
+  --accent:#438fd0; --accent2:#816fd1; --accent-dim:rgba(67,143,208,.10);
+  --shadow:0 20px 50px rgba(30,50,80,.10);
+}
+body.palette-blue{ --accent:#8cc8ff; --accent2:#b8a7ff; }
+body.palette-lavender{ --accent:#c2a8ff; --accent2:#8bbcff; }
+body.palette-pink{ --accent:#ffabc6; --accent2:#c7a8ff; }
+body.palette-gray{ --accent:#b9c6d8; --accent2:#a8b3c5; }
+
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ scroll-behavior:smooth; }
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(140,200,255,.08), transparent 28%),
+    radial-gradient(circle at 80% 20%, rgba(184,167,255,.07), transparent 25%),
+    var(--bg);
+  color:var(--text); font-family:Inter,Cairo,sans-serif; overflow-x:hidden;
+  transition:background .3s, color .3s;
+}
+
+.grid-bg{
+  position:fixed; inset:0; z-index:-3; pointer-events:none; opacity:.35;
+  background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:50px 50px;
+  mask-image:linear-gradient(to bottom, black, transparent 85%);
+}
+.orb{ position:fixed; width:350px; height:350px; border-radius:50%; filter:blur(100px); opacity:.10; pointer-events:none; z-index:-2; }
+.orb.one{ background:var(--accent); top:-150px; left:-120px; }
+.orb.two{ background:var(--accent2); right:-150px; top:300px; }
+
+header{
+  position:fixed; top:0; left:0; right:0; height:76px; z-index:100;
+  display:flex; align-items:center; justify-content:space-between; padding:0 34px;
+  background:rgba(7,11,20,.72); backdrop-filter:blur(20px); border-bottom:1px solid var(--line);
+}
+body.light header{ background:rgba(255,255,255,.78); }
+.logo{ display:flex; align-items:center; gap:12px; cursor:pointer; }
+.logo-mark{
+  width:38px; height:38px; border:1px solid var(--accent); border-radius:12px;
+  display:grid; place-items:center; color:var(--accent); font-weight:800;
+  box-shadow:0 0 25px rgba(140,200,255,.15);
+}
+.logo-text{ font-size:14px; font-weight:800; letter-spacing:2px; }
+.logo-text span{ color:var(--accent); }
+nav{ display:flex; align-items:center; gap:5px; }
+.nav-btn{
+  border:0; background:transparent; color:var(--muted); padding:10px 11px; border-radius:10px;
+  cursor:pointer; font-size:10px; font-weight:700; letter-spacing:.6px; transition:.2s;
+}
+.nav-btn:hover, .nav-btn.active{ color:var(--text); background:var(--accent-dim); }
+.header-actions{ display:flex; align-items:center; gap:9px; }
+.icon-btn{
+  border:1px solid var(--line); background:var(--panel); color:var(--text);
+  width:39px; height:39px; border-radius:11px; cursor:pointer; transition:.2s;
+}
+.icon-btn:hover{ border-color:var(--accent); transform:translateY(-1px); }
+.online{ display:flex; align-items:center; gap:7px; color:var(--success); font-size:9px; font-weight:800; letter-spacing:1px; }
+.online-dot{ width:7px; height:7px; border-radius:50%; background:var(--success); box-shadow:0 0 12px var(--success); }
+
+.btn{
+  border:1px solid var(--line); background:var(--card); color:var(--text); padding:12px 17px;
+  border-radius:12px; cursor:pointer; font-size:10px; font-weight:800; letter-spacing:.5px; transition:.2s;
+}
+.btn:hover{ transform:translateY(-2px); border-color:var(--accent); }
+.btn.primary{ background:var(--accent); color:#07101d; border-color:transparent; }
+.btn.danger{ background:var(--danger); color:#fff; border-color:transparent; }
+.btn.soft{ background:var(--accent-dim); color:var(--accent); border-color:rgba(140,200,255,.18); }
+
+.screen{ display:none; min-height:100vh; padding:110px 6vw 70px; }
+.screen.active{ display:block; }
+.container{ width:min(1200px,100%); margin:auto; }
+
+#landing{ min-height:100vh; padding:0; display:none; align-items:center; justify-content:center; text-align:center; }
+#landing.active{ display:flex; }
+.hero{ width:min(1100px,100%); }
+.badge{
+  display:inline-flex; align-items:center; gap:8px; padding:8px 13px; border-radius:999px;
+  border:1px solid var(--line); background:rgba(255,255,255,.025); color:var(--muted);
+  font-size:9px; font-weight:800; letter-spacing:1.5px; margin-bottom:25px;
+}
+.pulse{ width:7px; height:7px; border-radius:50%; background:var(--success); box-shadow:0 0 14px var(--success); }
+.hero h1{ font-size:clamp(60px,11vw,150px); line-height:.86; letter-spacing:-6px; font-weight:800; margin-bottom:28px; }
+.hero h1 span{ color:var(--accent); }
+.hero-subtitle{ font-size:clamp(12px,1.6vw,17px); letter-spacing:4px; font-weight:700; color:var(--muted); margin-bottom:20px; }
+.hero-tagline{ font-size:11px; letter-spacing:2px; color:var(--accent); font-weight:800; margin-bottom:35px; }
+.hero-buttons{ display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap; }
+.hero-note{ margin-top:28px; color:var(--muted); font-size:9px; line-height:1.8; max-width:640px; margin-left:auto; margin-right:auto; }
+
+.page-title{ margin-bottom:38px; }
+.eyebrow{ color:var(--accent); font-size:9px; font-weight:800; letter-spacing:2px; margin-bottom:10px; }
+.page-title h2{ font-size:clamp(28px,5vw,50px); letter-spacing:-2px; margin-bottom:10px; }
+.page-title p{ color:var(--muted); max-width:780px; line-height:1.8; font-size:12px; }
+
+.card{
+  background:linear-gradient(145deg, rgba(255,255,255,.025), rgba(255,255,255,.01)), var(--card);
+  border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow);
+}
+.card-pad{ padding:25px; }
+
+.about-grid{ display:grid; grid-template-columns:1.2fr .8fr; gap:18px; }
+.about-main h3{ font-size:26px; margin-bottom:15px; }
+.about-main p{ color:var(--muted); line-height:2; font-size:12px; }
+.quote{
+  margin-top:24px; padding:20px; border-left:3px solid var(--accent); background:var(--accent-dim);
+  border-radius:0 14px 14px 0; line-height:1.9; font-size:12px;
+}
+.core-list{ display:grid; gap:12px; }
+.core-item{ padding:17px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.015); }
+.core-item strong{ display:block; margin-bottom:6px; font-size:11px; }
+.core-item span{ color:var(--muted); font-size:10px; line-height:1.7; }
+
+.pipeline{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:22px; }
+.step{ padding:22px 15px; border:1px solid var(--line); border-radius:17px; background:var(--card); cursor:pointer; transition:.25s; }
+.step:hover, .step.active{ transform:translateY(-4px); border-color:var(--accent); background:var(--accent-dim); }
+.step-number{ font-size:9px; color:var(--accent); font-weight:800; margin-bottom:15px; }
+.step h4{ font-size:13px; margin-bottom:7px; }
+.step p{ font-size:9px; line-height:1.6; color:var(--muted); }
+.step-detail{ min-height:190px; display:flex; align-items:center; }
+.step-detail h3{ font-size:22px; margin-bottom:10px; }
+.step-detail p{ color:var(--muted); line-height:1.9; font-size:12px; max-width:850px; }
+
+.brain-grid{ display:grid; grid-template-columns:.9fr 1.1fr; gap:18px; }
+.brain-visual{ min-height:440px; display:grid; place-items:center; position:relative; overflow:hidden; }
+.brain-core{
+  width:150px; height:150px; border:1px solid var(--accent); border-radius:50%;
+  display:grid; place-items:center; text-align:center; position:relative;
+  box-shadow:0 0 0 18px rgba(140,200,255,.025), 0 0 0 40px rgba(140,200,255,.015), 0 0 55px rgba(140,200,255,.15);
+}
+.brain-core::before, .brain-core::after{
+  content:""; position:absolute; inset:-35px; border:1px dashed rgba(140,200,255,.18);
+  border-radius:50%; animation:spin 14s linear infinite;
+}
+.brain-core::after{ inset:-70px; animation-direction:reverse; animation-duration:20s; }
+@keyframes spin{ to{ transform:rotate(360deg); } }
+.brain-core strong{ font-size:22px; }
+.brain-core span{ display:block; color:var(--accent); font-size:8px; letter-spacing:2px; margin-top:5px; }
+.brain-node{
+  position:absolute; padding:8px 11px; border:1px solid var(--line); background:var(--panel);
+  border-radius:10px; color:var(--muted); font-size:8px; font-weight:800; letter-spacing:.5px;
+}
+.n1{ top:25%; left:12%; } .n2{ top:18%; right:12%; } .n3{ bottom:23%; left:10%; } .n4{ bottom:18%; right:10%; }
+.decision-grid{ display:grid; gap:10px; }
+.info-row{ display:flex; justify-content:space-between; gap:20px; padding:16px 17px; border:1px solid var(--line); border-radius:13px; }
+.info-row span:first-child{ color:var(--muted); font-size:9px; font-weight:700; }
+.info-row span:last-child{ text-align:right; font-size:10px; font-weight:800; }
+.confidence{ color:var(--success)!important; }
+.ai-box{ margin-top:15px; padding:15px; border-radius:13px; background:var(--accent-dim); border:1px solid rgba(140,200,255,.15); }
+.ai-label{ color:var(--accent); font-size:8px; font-weight:800; letter-spacing:1px; margin-bottom:7px; }
+.ai-box p{ color:var(--muted); font-size:9px; line-height:1.8; }
+
+.code-label{ font-size:8px; color:var(--muted); font-weight:800; letter-spacing:1px; margin:12px 0 4px; }
+.code-block{
+  background:#0a0f1a; border:1px solid var(--line); border-radius:10px; padding:12px;
+  font-family:"JetBrains Mono",monospace; font-size:9px; line-height:1.7; overflow-x:auto;
+  white-space:pre-wrap; word-break:break-word;
+}
+body.light .code-block{ background:#0f1524; color:#e7ecf5; }
+.code-block.before{ border-left:3px solid var(--danger); }
+.code-block.after{ border-left:3px solid var(--success); }
+.code-block.test{ border-left:3px solid var(--purple); }
+
+.threat-layout{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.threat-list{ display:grid; gap:11px; }
+.threat-card{ padding:18px; border:1px solid var(--line); border-radius:15px; background:var(--card); cursor:pointer; transition:.2s; }
+.threat-card:hover{ border-color:var(--accent); transform:translateY(-2px); }
+.threat-top{ display:flex; justify-content:space-between; gap:15px; margin-bottom:9px; }
+.threat-name{ font-weight:800; font-size:11px; }
+.risk{ font-size:8px; font-weight:800; padding:4px 8px; border-radius:999px; }
+.risk.high{ background:rgba(255,111,145,.12); color:var(--danger); }
+.risk.medium{ background:rgba(255,197,107,.12); color:var(--warning); }
+.risk.low{ background:rgba(119,224,181,.12); color:var(--success); }
+.threat-card p{ color:var(--muted); font-size:9px; line-height:1.7; }
+
+.timeline{ position:relative; padding-left:25px; }
+.timeline::before{ content:""; position:absolute; left:7px; top:5px; bottom:5px; width:1px; background:var(--line); }
+.timeline-item{ position:relative; padding-bottom:24px; }
+.timeline-item::before{
+  content:""; position:absolute; left:-22px; top:4px; width:7px; height:7px; border-radius:50%;
+  background:var(--accent); box-shadow:0 0 12px rgba(140,200,255,.5);
+}
+.timeline-time{ color:var(--accent); font-size:8px; font-weight:800; margin-bottom:5px; }
+.timeline-title{ font-size:10px; font-weight:800; margin-bottom:5px; }
+.timeline-desc{ color:var(--muted); font-size:9px; }
+
+.architecture{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:stretch; }
+.arch-node{
+  min-height:180px; padding:20px; border:1px solid var(--line); border-radius:18px; background:var(--card);
+  display:flex; flex-direction:column; justify-content:center; position:relative;
+}
+.arch-node:not(:last-child)::after{
+  content:"→"; position:absolute; right:-18px; top:50%; transform:translateY(-50%);
+  color:var(--accent); font-weight:800; z-index:2;
+}
+.arch-icon{ font-size:25px; margin-bottom:15px; color:var(--accent); }
+.arch-node h4{ font-size:12px; margin-bottom:8px; }
+.arch-node p{ color:var(--muted); font-size:9px; line-height:1.7; }
+.arch-note{ margin-top:20px; padding:18px; border:1px solid var(--line); border-radius:15px; color:var(--muted); font-size:10px; line-height:1.8; }
+
+.dashboard-top{ display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:25px; }
+.dashboard-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.mode-switch{ display:flex; gap:6px; padding:4px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
+.mode{ border:0; background:transparent; color:var(--muted); padding:8px 12px; border-radius:8px; cursor:pointer; font-size:8px; font-weight:800; }
+.mode.active{ background:var(--accent-dim); color:var(--accent); }
+.stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
+.stat{ padding:20px; }
+.stat-label{ color:var(--muted); font-size:8px; letter-spacing:1px; font-weight:800; margin-bottom:10px; }
+.stat-value{ font-size:30px; font-weight:800; }
+.stat-small{ color:var(--muted); font-size:8px; margin-top:5px; }
+.dashboard-grid{ display:grid; grid-template-columns:1.35fr .65fr; gap:18px; }
+
+.network{ min-height:540px; position:relative; overflow:hidden; }
+.network-head{ display:flex; justify-content:space-between; align-items:center; padding:20px 22px; border-bottom:1px solid var(--line); }
+.network-head h3{ font-size:13px; }
+.network-head span{ font-size:8px; color:var(--muted); }
+.network-area{ position:relative; min-height:455px; background:radial-gradient(circle at center, rgba(140,200,255,.06), transparent 40%); }
+.network-lines{ position:absolute; inset:0; pointer-events:none; }
+.line{
+  position:absolute; height:1px;
+  background:linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity:.25; transform-origin:left center;
+}
+.center-node{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:105px; height:105px;
+  border:1px solid var(--accent); border-radius:50%; background:var(--panel);
+  display:grid; place-items:center; text-align:center; box-shadow:0 0 35px rgba(140,200,255,.12);
+}
+.center-node strong{ display:block; font-size:12px; }
+.center-node span{ color:var(--accent); font-size:7px; letter-spacing:1px; }
+.device{
+  position:absolute; width:125px; padding:11px; border:1px solid var(--line); border-radius:13px;
+  background:rgba(13,19,33,.92); cursor:pointer; transition:.25s;
+}
+body.light .device{ background:rgba(255,255,255,.94); }
+.device:hover{ transform:scale(1.04); border-color:var(--accent); }
+.device.attacking{ border-color:var(--danger); box-shadow:0 0 25px rgba(255,111,145,.18); animation:threatPulse 1s infinite; }
+.device.iso{ border-color:var(--success); box-shadow:0 0 25px rgba(119,224,181,.15); }
+@keyframes threatPulse{ 50%{ transform:scale(1.04); } }
+.device-status{ display:flex; align-items:center; gap:6px; font-size:7px; color:var(--success); font-weight:800; margin-bottom:8px; transition:color .2s; }
+.device-status .dot{ width:5px; height:5px; background:currentColor; border-radius:50%; }
+.device.attacking .device-status{ color:var(--danger); }
+.device.iso .device-status{ color:var(--success); }
+.device-name{ font-size:9px; font-weight:800; margin-bottom:3px; }
+.device-ip{ color:var(--muted); font-size:8px; }
+.d1{ left:8%; top:14%; } .d2{ left:40%; top:7%; } .d3{ right:8%; top:14%; } .d4{ left:5%; top:49%; }
+.d5{ right:5%; top:49%; } .d6{ left:14%; bottom:9%; } .d7{ left:42%; bottom:5%; } .d8{ right:14%; bottom:9%; }
+
+.side-stack{ display:grid; gap:18px; }
+.panel-title{ display:flex; align-items:center; justify-content:space-between; padding:19px 21px; border-bottom:1px solid var(--line); }
+.panel-title h3{ font-size:12px; }
+.panel-title span{ color:var(--muted); font-size:8px; }
+.detail{ padding:20px; }
+.detail-name{ font-size:17px; font-weight:800; margin-bottom:4px; word-break:break-all; }
+.detail-ip{ color:var(--muted); font-size:9px; margin-bottom:18px; }
+.detail-grid{ display:grid; gap:8px; }
+.detail-row{ display:flex; justify-content:space-between; padding:11px 12px; border-radius:10px; background:rgba(255,255,255,.025); border:1px solid var(--line); font-size:8px; }
+.detail-row span:first-child{ color:var(--muted); }
+.status-safe{ color:var(--success); font-weight:800; }
+.status-threat{ color:var(--danger); font-weight:800; }
+
+.log-card{ margin-top:18px; }
+.log-search{ display:flex; gap:8px; }
+.log-search input{ width:220px; border:1px solid var(--line); background:var(--card2); color:var(--text); outline:none; border-radius:9px; padding:9px 11px; font-size:9px; }
+.logs{ max-height:280px; overflow:auto; padding:0 20px 20px; }
+.log{ display:grid; grid-template-columns:80px 70px 1fr; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); font-size:8px; }
+.log-time{ color:var(--muted); }
+.log-type{ font-weight:800; }
+.log-type.detect{ color:var(--warning); }
+.log-type.analyze{ color:var(--blue); }
+.log-type.fix{ color:var(--success); }
+.log-type.test{ color:var(--purple); }
+.log-type.alert{ color:var(--danger); }
+.log-type.system{ color:var(--accent); }
+.log-text{ color:var(--muted); }
+
+.analyst-actions{ display:grid; gap:7px; margin-top:12px; }
+
+.demo-overlay{
+  position:fixed; inset:0; z-index:300; background:rgba(3,6,12,.88); backdrop-filter:blur(18px);
+  display:none; align-items:center; justify-content:center; padding:25px;
+}
+.demo-overlay.show{ display:flex; }
+.demo-box{
+  width:min(720px,100%); padding:40px; border:1px solid var(--line); border-radius:25px; background:var(--panel);
+  box-shadow:0 30px 100px rgba(0,0,0,.45); text-align:center;
+}
+.demo-kicker{ color:var(--accent); font-size:8px; font-weight:800; letter-spacing:2px; margin-bottom:20px; }
+.demo-status{ min-height:90px; display:grid; place-items:center; font-size:clamp(22px,4.5vw,40px); font-weight:800; letter-spacing:-1px; margin-bottom:20px; }
+.demo-description{ color:var(--muted); font-size:10px; line-height:1.8; min-height:42px; }
+.demo-progress{ height:4px; background:var(--card2); border-radius:99px; margin:25px 0; overflow:hidden; }
+.demo-progress span{ display:block; width:0%; height:100%; background:var(--accent); transition:width .6s; }
+.demo-actions{ display:flex; justify-content:center; gap:8px; }
+
+.settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.setting-section{ padding:23px; }
+.setting-section h3{ font-size:13px; margin-bottom:18px; }
+.setting-label{ color:var(--muted); font-size:9px; font-weight:800; margin-bottom:9px; }
+.setting-row{ margin-bottom:22px; }
+.toggle{ display:flex; gap:7px; }
+.toggle button{ flex:1; }
+.toggle button.active{ background:var(--accent); color:#07101d; border-color:transparent; }
+.palette-options{ display:flex; gap:8px; flex-wrap:wrap; }
+.palette{ width:40px; height:40px; border-radius:12px; border:2px solid transparent; cursor:pointer; }
+.palette.active{ border-color:var(--text); }
+.p-blue{ background:linear-gradient(135deg,#8cc8ff,#b8a7ff); }
+.p-lav{ background:linear-gradient(135deg,#c2a8ff,#8bbcff); }
+.p-pink{ background:linear-gradient(135deg,#ffabc6,#c7a8ff); }
+.p-gray{ background:linear-gradient(135deg,#b9c6d8,#a8b3c5); }
+
+.toast{
+  position:fixed; right:20px; bottom:20px; z-index:500; padding:13px 16px; background:var(--panel);
+  border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); color:var(--text);
+  font-size:9px; font-weight:700; opacity:0; transform:translateY(10px); pointer-events:none; transition:.25s;
+  max-width:320px;
+}
+.toast.show{ opacity:1; transform:translateY(0); }
+
+.footer{ margin-top:45px; padding-top:20px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:15px; color:var(--muted); font-size:8px; }
+.footer strong{ color:var(--accent); }
+
+@media(max-width:1050px){
+  nav{ display:none; }
+  .about-grid, .brain-grid, .threat-layout, .dashboard-grid, .settings-grid{ grid-template-columns:1fr; }
+  .pipeline{ grid-template-columns:repeat(2,1fr); }
+  .pipeline .step:last-child{ grid-column:span 2; }
+  .architecture{ grid-template-columns:1fr; }
+  .arch-node:not(:last-child)::after{ content:"↓"; right:50%; top:auto; bottom:-25px; transform:translateX(50%); }
+  .stats{ grid-template-columns:repeat(2,1fr); }
+}
+@media(max-width:650px){
+  header{ padding:0 15px; }
+  .logo-text{ display:none; }
+  .online{ display:none; }
+  .screen{ padding:100px 16px 50px; }
+  .hero h1{ letter-spacing:-4px; }
+  .pipeline{ grid-template-columns:1fr; }
+  .pipeline .step:last-child{ grid-column:auto; }
+  .stats{ grid-template-columns:1fr 1fr; }
+  .dashboard-top{ align-items:flex-start; flex-direction:column; }
+  .network-area{ min-height:620px; }
+  .device{ width:110px; }
+  .d1{ left:3%; top:8%; } .d2{ left:34%; top:3%; } .d3{ right:3%; top:8%; } .d4{ left:1%; top:42%; }
+  .d5{ right:1%; top:42%; } .d6{ left:5%; bottom:6%; } .d7{ left:34%; bottom:2%; } .d8{ right:5%; bottom:6%; }
+  .center-node{ width:90px; height:90px; }
+  .log{ grid-template-columns:65px 60px 1fr; }
+  .log-search input{ width:150px; }
+  .footer{ flex-direction:column; }
+}
+</style>
+</head>
+<body class="palette-blue">
+
+<div class="grid-bg"></div>
+<div class="orb one"></div>
+<div class="orb two"></div>
+
+<header>
+  <div class="logo" onclick="go('landing')">
+    <div class="logo-mark">C</div>
+    <div class="logo-text">CODE<span>SHIELD</span> AI</div>
+  </div>
+  <nav>
+    <button class="nav-btn" data-screen="about" onclick="go('about')">ABOUT</button>
+    <button class="nav-btn" data-screen="how" onclick="go('how')">HOW IT WORKS</button>
+    <button class="nav-btn" data-screen="brain" onclick="go('brain')">AI ENGINE</button>
+    <button class="nav-btn" data-screen="threats" onclick="go('threats')">VULNERABILITY CENTER</button>
+    <button class="nav-btn" data-screen="architecture" onclick="go('architecture')">ARCHITECTURE</button>
+    <button class="nav-btn" data-screen="dashboard" onclick="go('dashboard')">DASHBOARD</button>
+    <button class="nav-btn" data-screen="settings" onclick="go('settings')">SETTINGS</button>
+  </nav>
+  <div class="header-actions">
+    <div class="online"><span class="online-dot"></span>SYSTEM ONLINE</div>
+    <button class="icon-btn" onclick="toggleLanguage()" title="Language">ع</button>
+    <button class="icon-btn" onclick="toggleTheme()" title="Theme">◐</button>
+  </div>
+</header>
+
+<!-- LANDING -->
+<section id="landing" class="screen active">
+  <div class="hero">
+    <div class="badge"><span class="pulse"></span>PROTOTYPE · SIMULATION</div>
+    <h1>CODE<span>SHIELD</span></h1>
+    <div class="hero-subtitle">AI-POWERED CODE SECURITY PLATFORM</div>
+    <div class="hero-tagline">SCAN · DETECT · ANALYZE · FIX · VERIFY</div>
+    <div class="hero-buttons">
+      <button class="btn primary" onclick="go('dashboard')">ENTER DASHBOARD →</button>
+      <button class="btn" onclick="go('how')">EXPLORE SYSTEM</button>
+      <button class="btn soft" onclick="startLiveDemo()">▶ LIVE DEMO</button>
+    </div>
+    <div class="hero-note">
+      AI prototype that analyzes source code as it is written, detects security
+      vulnerabilities and structural bugs, suggests automatic fixes, and
+      generates tests to verify the fix — before the code ever ships.
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow">01 · ABOUT</div>
+    <h2>درع الشفرة</h2>
+    <p>CodeShield AI is an AI prototype that reviews source code for security and structural issues and proposes verified fixes.</p>
+  </div>
+  <div class="about-grid">
+    <div class="card card-pad about-main">
+      <h3>ثغرة تُكتشف، وحل يُقترح — قبل الإطلاق.</h3>
+      <p>
+        منصة ذكية موجهة لمهندسي البرمجيات تعمل على تحليل الشفرات البرمجية فور
+        كتابتها واكتشاف الثغرات الأمنية والأخطاء الهيكلية بدقة عالية. تستخدم
+        المنصة نماذج ذكاء اصطناعي متقدمة لا تكتفي بتحديد المشكلات فحسب، بل تقدم
+        اقتراحات تصحيح آلية وتنشئ اختبارات برمجية تلقائية للتحقق من سلامة النظام.
+      </p>
+      <p style="margin-top:14px;">
+        تهدف المنصة إلى تسريع عملية تطوير البرامج، تقليل التكاليف التشغيلية
+        للمؤسسات التقنية، وضمان أعلى معايير الأمان والجودة للمنتجات البرمجية
+        قبل إطلاقها.
+      </p>
+      <div class="quote">ثغرة تُكتشف، وحل يُقترح — قبل الإطلاق.</div>
+    </div>
+    <div class="card card-pad">
+      <div class="eyebrow">CORE CAPABILITIES</div>
+      <div class="core-list">
+        <div class="core-item"><strong>01 · AI Static Analysis</strong><span>تحليل الشفرة البرمجية بالذكاء الاصطناعي فور كتابتها لاكتشاف الأخطاء الهيكلية والثغرات المحتملة.</span></div>
+        <div class="core-item"><strong>02 · Vulnerability Detection</strong><span>اكتشاف الثغرات الأمنية الشائعة مثل حقن SQL وXSS وبيانات الاعتماد المكشوفة بدقة عالية.</span></div>
+        <div class="core-item"><strong>03 · Automatic Fix Suggestions</strong><span>اقتراحات تصحيح آلية جاهزة للتطبيق مباشرة على الشفرة دون تغيير وظيفتها.</span></div>
+        <div class="core-item"><strong>04 · Automated Test Generation</strong><span>توليد اختبارات برمجية تلقائية للتحقق من سلامة الإصلاح ومنع تكرار الثغرة.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <span>CodeShield AI · AI Code Security &amp; Remediation</span>
+    <span>© 2026 Lamis Alanazi · All Rights Reserved</span>
+  </div>
+</div></section>
+
+<!-- HOW IT WORKS -->
+<section id="how" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow">02 · HOW IT WORKS</div>
+    <h2>من تحليل الشفرة إلى التحقق الآلي.</h2>
+    <p>دورة المعالجة الأساسية التي يبني عليها CodeShield AI قراره الأمني.</p>
+  </div>
+  <div class="pipeline">
+    <div class="step active" onclick="showStep(0)"><div class="step-number">01</div><h4>SCAN</h4><p>Continuous code analysis.</p></div>
+    <div class="step" onclick="showStep(1)"><div class="step-number">02</div><h4>DETECT</h4><p>Identify known vulnerability patterns.</p></div>
+    <div class="step" onclick="showStep(2)"><div class="step-number">03</div><h4>ANALYZE</h4><p>Assess severity and impact.</p></div>
+    <div class="step" onclick="showStep(3)"><div class="step-number">04</div><h4>FIX</h4><p>Generate an automatic patch.</p></div>
+    <div class="step" onclick="showStep(4)"><div class="step-number">05</div><h4>VERIFY</h4><p>Generate a test and confirm the fix.</p></div>
+  </div>
+  <div class="card card-pad step-detail" id="stepDetail"></div>
+  <div class="card card-pad" style="margin-top:18px;">
+    <div class="eyebrow">ADVANCED AI INSIGHT</div>
+    <p style="color:var(--muted);font-size:11px;line-height:1.9;">
+      CodeShield AI can also estimate vulnerability severity and recommend a
+      fix using simulated decision logic. This layer supports the core
+      scan-and-remediate workflow and does not represent a production
+      machine-learning model.
+    </p>
+  </div>
+</div></section>
+
+<!-- AI ENGINE -->
+<section id="brain" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow">03 · AI DECISION ENGINE</div>
+    <h2>عقل الدرع.</h2>
+    <p>طبقة تحليلية تساعد النظام على تفسير الثغرة وتحديد الإجراء المناسب داخل بيئة المحاكاة.</p>
+  </div>
+  <div class="brain-grid">
+    <div class="card brain-visual">
+      <div class="brain-node n1">CODE</div>
+      <div class="brain-node n2">PATTERNS</div>
+      <div class="brain-node n3">RISK</div>
+      <div class="brain-node n4">FIX</div>
+      <div class="brain-core"><div><strong>AI</strong><span>SECURITY ENGINE</span></div></div>
+    </div>
+    <div class="card card-pad">
+      <div class="eyebrow">CURRENT ANALYSIS</div>
+      <div class="decision-grid">
+        <div class="info-row"><span>Vulnerability Type</span><span id="aiThreat">No active scan</span></div>
+        <div class="info-row"><span>Severity Score</span><span id="aiRisk">0 / 100</span></div>
+        <div class="info-row"><span>Affected File</span><span id="aiTarget">—</span></div>
+        <div class="info-row"><span>Recommended Action</span><span id="aiAction">MONITOR</span></div>
+        <div class="info-row"><span>Confidence</span><span id="aiConfidence" class="confidence">—</span></div>
+        <div class="ai-box"><div class="ai-label">REASONING</div><p id="aiReason">Waiting for a scan to run.</p></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- VULNERABILITY CENTER -->
+<section id="threats" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow">04 · VULNERABILITY CENTER</div>
+    <h2>مركز الثغرات.</h2>
+    <p>عرض مبسط لأنواع الثغرات الأمنية التي يمكن للنظام اكتشافها وتحليلها داخل النموذج التجريبي.</p>
+  </div>
+  <div class="threat-layout">
+    <div class="card card-pad">
+      <div class="eyebrow">VULNERABILITY CATALOG</div>
+      <div class="threat-list">
+        <div class="threat-card" onclick="selectThreat('SQL Injection', this)">
+          <div class="threat-top"><div class="threat-name">SQL Injection</div><div class="risk high">HIGH</div></div>
+          <p>استعلامات قاعدة بيانات تُبنى بدمج نصي مباشر بدون تحقق، ما يسمح بتنفيذ أوامر SQL غير مصرح بها.</p>
+        </div>
+        <div class="threat-card" onclick="selectThreat('Hardcoded Credentials', this)">
+          <div class="threat-top"><div class="threat-name">Hardcoded Credentials</div><div class="risk high">HIGH</div></div>
+          <p>مفاتيح API أو كلمات مرور مكتوبة مباشرة داخل الشفرة بدل تخزينها في مدير أسرار آمن.</p>
+        </div>
+        <div class="threat-card" onclick="selectThreat('Cross-Site Scripting (XSS)', this)">
+          <div class="threat-top"><div class="threat-name">Cross-Site Scripting (XSS)</div><div class="risk medium">MEDIUM</div></div>
+          <p>إدخال مستخدم يُعرض دون تنقية، ما يسمح بتنفيذ سكربتات ضارة داخل المتصفح.</p>
+        </div>
+        <div class="threat-card" onclick="selectThreat('Insecure Deserialization', this)">
+          <div class="threat-top"><div class="threat-name">Insecure Deserialization</div><div class="risk low">LOW</div></div>
+          <p>تحويل بيانات غير موثوقة إلى كائنات برمجية دون تحقق كافٍ من مصدرها.</p>
+        </div>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="eyebrow">LIVE SCAN TIMELINE</div>
+      <div class="timeline" id="threatTimeline">
+        <div class="timeline-item"><div class="timeline-time">SYSTEM</div><div class="timeline-title">Scanning engine initialized</div><div class="timeline-desc">Continuous code analysis is active.</div></div>
+        <div class="timeline-item"><div class="timeline-time">READY</div><div class="timeline-title">Waiting for a vulnerability</div><div class="timeline-desc">No active incident.</div></div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow">05 · SYSTEM ARCHITECTURE</div>
+    <h2>كيف يعمل الدرع؟</h2>
+    <p>البنية المنطقية للنموذج من استيراد الشفرة إلى تسليم تقرير التحقق.</p>
+  </div>
+  <div class="architecture">
+    <div class="arch-node"><div class="arch-icon">◉</div><h4>Code Ingestion</h4><p>Import source files from the repository or as they are written.</p></div>
+    <div class="arch-node"><div class="arch-icon">⌁</div><h4>Static &amp; AI Analysis</h4><p>Analyze code with static rules and AI pattern models.</p></div>
+    <div class="arch-node"><div class="arch-icon">◈</div><h4>Vulnerability Detection</h4><p>Identify security flaws and structural risks.</p></div>
+    <div class="arch-node"><div class="arch-icon">✦</div><h4>Auto-Fix Engine</h4><p>Generate a ready-to-apply automatic patch.</p></div>
+    <div class="arch-node"><div class="arch-icon">▤</div><h4>Test &amp; Report</h4><p>Generate a verification test and a safety report.</p></div>
+  </div>
+  <div class="arch-note">
+    <strong style="color:var(--text);">Prototype boundary:</strong>
+    CodeShield AI demonstrates the scan-and-remediate workflow on sample code
+    files inside a simulated environment. It does not commit changes to a
+    real production repository.
+  </div>
+</div></section>
+
+<!-- DASHBOARD -->
+<section id="dashboard" class="screen"><div class="container">
+  <div class="dashboard-top">
+    <div class="page-title" style="margin:0;">
+      <div class="eyebrow">06 · SECURITY OPERATIONS</div>
+      <h2>CODESHIELD CONTROL</h2>
+      <p>راقب قاعدة الشفرة البرمجية وشغّل فحص أمان كامل لاكتشاف الثغرات وإصلاحها تلقائيًا.</p>
+    </div>
+    <div class="dashboard-actions">
+      <div class="mode-switch">
+        <button class="mode active" id="autoMode" onclick="setMode('autonomous')">AUTONOMOUS</button>
+        <button class="mode" id="analystMode" onclick="setMode('analyst')">ANALYST</button>
+      </div>
+      <button class="btn soft" onclick="startLiveDemo()">▶ LIVE DEMO</button>
+      <button class="btn danger" onclick="runScan()">⚡ SCAN CODEBASE</button>
+      <button class="btn" onclick="resetSystem()">RESET</button>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="card stat"><div class="stat-label">VULNERABILITIES FOUND</div><div class="stat-value" id="statFound">0</div><div class="stat-small">simulated findings</div></div>
+    <div class="card stat"><div class="stat-label">FIXES APPLIED</div><div class="stat-value" id="statFixed">0</div><div class="stat-small">auto-remediated files</div></div>
+    <div class="card stat"><div class="stat-label">AVG FIX TIME</div><div class="stat-value" id="statTime">—</div><div class="stat-small">milliseconds</div></div>
+    <div class="card stat"><div class="stat-label">TESTS GENERATED</div><div class="stat-value" id="statTests">0</div><div class="stat-small">verification tests</div></div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="card network">
+      <div class="network-head"><h3>CODEBASE MAP</h3><span id="networkState">SCANNING ACTIVE</span></div>
+      <div class="network-area">
+        <div class="network-lines" id="networkLines"></div>
+        <div class="center-node"><div><strong>CodeShield</strong><span>AI ENGINE</span></div></div>
+
+        <div class="device d1" data-id="auth/login.py" onclick="selectFile('auth/login.py')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">auth/login.py</div><div class="device-ip">Authentication Service</div>
+        </div>
+        <div class="device d2" data-id="db/queries.py" onclick="selectFile('db/queries.py')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">db/queries.py</div><div class="device-ip">Database Query Layer</div>
+        </div>
+        <div class="device d3" data-id="api/payments.js" onclick="selectFile('api/payments.js')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">api/payments.js</div><div class="device-ip">Payment Gateway API</div>
+        </div>
+        <div class="device d4" data-id="web/search.jsx" onclick="selectFile('web/search.jsx')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">web/search.jsx</div><div class="device-ip">Search Component</div>
+        </div>
+        <div class="device d5" data-id="services/upload.php" onclick="selectFile('services/upload.php')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">upload.php</div><div class="device-ip">File Upload Service</div>
+        </div>
+        <div class="device d6" data-id="config/settings.env" onclick="selectFile('config/settings.env')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">settings.env</div><div class="device-ip">Environment Config</div>
+        </div>
+        <div class="device d7" data-id="scripts/deploy.sh" onclick="selectFile('scripts/deploy.sh')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">deploy.sh</div><div class="device-ip">Deployment Script</div>
+        </div>
+        <div class="device d8" data-id="mail/notify.rb" onclick="selectFile('mail/notify.rb')">
+          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
+          <div class="device-name">notify.rb</div><div class="device-ip">Notification Service</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-stack">
+      <div class="card">
+        <div class="panel-title"><h3>FILE INTELLIGENCE</h3><span>LIVE</span></div>
+        <div class="detail">
+          <div class="detail-name" id="detailName">Select a file</div>
+          <div class="detail-ip" id="detailIP">Click any file on the codebase map.</div>
+          <div class="detail-grid">
+            <div class="detail-row"><span>Status</span><span id="detailStatus">—</span></div>
+            <div class="detail-row"><span>Severity</span><span id="detailRisk">—</span></div>
+            <div class="detail-row"><span>Vulnerability</span><span id="detailBehavior">—</span></div>
+            <div class="detail-row"><span>Last Scan</span><span id="detailEvent">—</span></div>
+          </div>
+          <div class="ai-box"><div class="ai-label">SUGGESTED FIX</div><p id="detailAI">Select a file to inspect its current state.</p></div>
+          <div id="detailCode"></div>
+          <div id="analystControls" class="analyst-actions" style="display:none;">
+            <button class="btn danger" onclick="analystAction('fix')">APPLY AI FIX</button>
+            <button class="btn" onclick="analystAction('ignore')">MARK AS FALSE POSITIVE</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="panel-title"><h3>REMEDIATION PIPELINE</h3><span id="modeLabel">AUTONOMOUS</span></div>
+        <div class="detail">
+          <div class="detail-row"><span>SCAN</span><span class="status-safe">ACTIVE</span></div>
+          <div class="detail-row"><span>DETECT</span><span class="status-safe">READY</span></div>
+          <div class="detail-row"><span>ANALYZE</span><span class="status-safe">READY</span></div>
+          <div class="detail-row"><span>FIX</span><span class="status-safe">READY</span></div>
+          <div class="detail-row"><span>TEST</span><span class="status-safe">LIVE</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card log-card">
+    <div class="panel-title">
+      <h3>LIVE SCAN LOG</h3>
+      <div class="log-search"><input id="logSearch" type="text" placeholder="Search events..." oninput="filterLogs()"></div>
+    </div>
+    <div class="logs" id="logs"></div>
+  </div>
+
+  <div class="footer">
+    <span><strong>CodeShield AI</strong> · DETECT VULNERABILITIES. FIX WITH CONFIDENCE.</span>
+    <span>© 2026 Lamis Alanazi · All Rights Reserved</span>
+  </div>
+</div></section>
+
+<!-- SETTINGS -->
+<section id="settings" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow">07 · SETTINGS</div>
+    <h2>System Preferences.</h2>
+    <p>Customize the interface appearance and language.</p>
+  </div>
+  <div class="settings-grid">
+    <div class="card setting-section">
+      <h3>Appearance</h3>
+      <div class="setting-row">
+        <div class="setting-label">THEME</div>
+        <div class="toggle" id="themeToggle">
+          <button class="btn active" data-value="dark" onclick="setTheme('dark')">DARK</button>
+          <button class="btn" data-value="light" onclick="setTheme('light')">LIGHT</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">PASTEL ACCENT</div>
+        <div class="palette-options">
+          <button class="palette p-blue active" title="Blue" onclick="setPalette('blue')"></button>
+          <button class="palette p-lav" title="Lavender" onclick="setPalette('lavender')"></button>
+          <button class="palette p-pink" title="Pink" onclick="setPalette('pink')"></button>
+          <button class="palette p-gray" title="Soft Gray" onclick="setPalette('gray')"></button>
+        </div>
+      </div>
+    </div>
+    <div class="card setting-section">
+      <h3>Language</h3>
+      <div class="setting-row">
+        <div class="setting-label">INTERFACE LANGUAGE</div>
+        <div class="toggle" id="langToggle">
+          <button class="btn active" data-value="en" onclick="setLanguage('en')">ENGLISH</button>
+          <button class="btn" data-value="ar" onclick="setLanguage('ar')">العربية</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-label">SYSTEM INFORMATION</div>
+        <div class="detail-grid">
+          <div class="detail-row"><span>Project</span><span>CodeShield AI</span></div>
+          <div class="detail-row"><span>Type</span><span>AI Code Security Platform</span></div>
+          <div class="detail-row"><span>Response</span><span>Autonomous Remediation Simulation</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- LIVE DEMO -->
+<div class="demo-overlay" id="demoOverlay">
+  <div class="demo-box">
+    <div class="demo-kicker">CODESHIELD AI · LIVE REMEDIATION SIMULATION</div>
+    <div class="demo-status" id="demoStatus">SYSTEM ONLINE</div>
+    <div class="demo-description" id="demoDescription">Initializing static analysis engine...</div>
+    <div class="demo-progress"><span id="demoProgress"></span></div>
+    <div class="demo-actions"><button class="btn" onclick="closeDemo()">CLOSE</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* CodeShield AI — prototype engine */
+
+const files = [
+  { id:"auth/login.py", module:"Authentication Service",
+    vuln:{ type:"Weak Password Hashing", severity:"MEDIUM", risk:62,
+      before:'password_hash = md5(password)',
+      after:'password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())',
+      test:'def test_password_uses_bcrypt():\n    assert password_hash.startswith("$2b$")',
+      reason:"دالة تجزئة كلمة المرور تستخدم خوارزمية MD5 الضعيفة القابلة للكسر بسهولة. تم اقتراح الانتقال إلى bcrypt مع salt عشوائي." } },
+  { id:"db/queries.py", module:"Database Query Layer",
+    vuln:{ type:"SQL Injection", severity:"HIGH", risk:96,
+      before:'query = "SELECT * FROM users WHERE id=" + user_id\ncursor.execute(query)',
+      after:'query = "SELECT * FROM users WHERE id = %s"\ncursor.execute(query, (user_id,))',
+      test:'def test_query_rejects_sql_injection():\n    result = get_user("1; DROP TABLE users;--")\n    assert result is None',
+      reason:"الاستعلام يُبنى بدمج نصي مباشر لمدخل المستخدم، ما يسمح بحقن أوامر SQL. تم توليد نسخة معلمنة (parameterized) من الاستعلام." } },
+  { id:"api/payments.js", module:"Payment Gateway API",
+    vuln:{ type:"Improper Input Validation", severity:"MEDIUM", risk:58,
+      before:'app.post("/charge",(req,res)=>{ chargeCard(req.body.amount) })',
+      after:'app.post("/charge",(req,res)=>{ const amount = validateAmount(req.body.amount); chargeCard(amount) })',
+      test:'test("rejects negative charge amounts", () => {\n  expect(() => chargeCard(-50)).toThrow();\n});',
+      reason:"قيمة الدفع تُستخدم مباشرة دون تحقق من صحتها، ما يسمح بتمرير قيم سالبة أو غير منطقية. أُضيف تحقق صارم قبل التنفيذ." } },
+  { id:"web/search.jsx", module:"Search Component",
+    vuln:{ type:"Cross-Site Scripting (XSS)", severity:"MEDIUM", risk:71,
+      before:'<div dangerouslySetInnerHTML={{__html: query}} />',
+      after:'<div>{sanitize(query)}</div>',
+      test:'test("escapes markup in search query", () => {\n  expect(render("<img onerror=alert(1)>")).not.toContain("onerror");\n});',
+      reason:"محتوى البحث يُحقن مباشرة في الصفحة دون تنقية، ما يفتح الباب أمام XSS. استُبدل بعرض نص آمن بعد التنقية." } },
+  { id:"services/upload.php", module:"File Upload Service",
+    vuln:{ type:"Insecure File Upload", severity:"HIGH", risk:88,
+      before:'move_uploaded_file($_FILES["file"]["tmp_name"], "/uploads/".$_FILES["file"]["name"]);',
+      after:'if(in_array($ext,$allowed)){ move_uploaded_file($tmp, "/uploads/".uniqid().".".$ext); }',
+      test:'function test_rejects_executable_upload() {\n    assertFalse(upload("shell.php"));\n}',
+      reason:"الخدمة تقبل أي ملف مرفوع بدون التحقق من امتداده، ما يسمح برفع ملفات تنفيذية ضارة. أُضيف تحقق من الامتداد وإعادة تسمية الملف." } },
+  { id:"config/settings.env", module:"Environment Configuration",
+    vuln:{ type:"Hardcoded Credentials", severity:"HIGH", risk:93,
+      before:'API_KEY=sk_live_51H8x...\nDB_PASSWORD=admin123',
+      after:'API_KEY=${SECRET_MANAGER.API_KEY}\nDB_PASSWORD=${SECRET_MANAGER.DB_PASSWORD}',
+      test:'def test_no_hardcoded_secrets_in_env():\n    assert "sk_live" not in open(".env").read()',
+      reason:"بيانات اعتماد حساسة مكتوبة مباشرة في ملف الإعدادات. اقتُرح نقلها إلى مدير أسرار (secrets manager)." } },
+  { id:"scripts/deploy.sh", module:"Deployment Script",
+    vuln:{ type:"Command Injection", severity:"HIGH", risk:90,
+      before:'eval "deploy $BRANCH_NAME"',
+      after:'deploy "$(printf %q "$BRANCH_NAME")"',
+      test:'test_deploy_rejects_shell_metacharacters() {\n  run deploy "; rm -rf /"\n  [ "$status" -ne 0 ]\n}',
+      reason:"اسم الفرع يُمرر مباشرة إلى eval دون تنقية، ما يسمح بتنفيذ أوامر نظام عشوائية. استُبدل بتمرير آمن للمعامل." } },
+  { id:"mail/notify.rb", module:"Notification Service",
+    vuln:{ type:"Insecure Deserialization", severity:"LOW", risk:41,
+      before:'obj = Marshal.load(params[:data])',
+      after:'obj = JSON.parse(params[:data])',
+      test:'it "rejects unsafe marshal payloads" do\n  expect { notify(marshal_payload) }.to raise_error\nend',
+      reason:"البيانات القادمة من المستخدم تُفكّك عبر Marshal.load غير الآمن، ما يسمح بتنفيذ كود عشوائي. استُبدل بـ JSON.parse الآمن." } }
+];
+
+const state = {
+  found:0, fixed:0, tests:0, fixTimes:[],
+  mode:"autonomous", selected:null,
+  language:"en", theme:"dark", palette:"blue",
+  flaggedFiles:new Set(), logs:[]
+};
+
+function go(screen){
+  document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
+  const target = document.getElementById(screen);
+  if(target) target.classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(btn=>{
+    btn.classList.toggle("active", btn.dataset.screen === screen);
+  });
+  window.scrollTo({ top:0, behavior:"smooth" });
+}
+
+const stepData = [
+  { title:"SCAN · تحليل الشفرة", text:"يقوم CodeShield AI بتحليل الشفرة البرمجية سطرًا بسطر فور كتابتها، للبحث عن أنماط غير آمنة أو أخطاء هيكلية محتملة." },
+  { title:"DETECT · اكتشاف الثغرة", text:"عند العثور على نمط يطابق ثغرة أمنية معروفة (مثل حقن SQL أو XSS)، يسجل النظام الحدث ويبدأ تحليل الخطورة." },
+  { title:"ANALYZE · تحليل الخطورة", text:"يقيّم النموذج مستوى خطورة الثغرة وتأثيرها المحتمل، مع تفسير مبسط للقرار داخل محرك الذكاء الاصطناعي." },
+  { title:"FIX · اقتراح الإصلاح", text:"يقترح النظام تصحيحًا آليًا جاهزًا للتطبيق، يعالج جذر المشكلة دون تغيير وظيفة الكود." },
+  { title:"VERIFY · التحقق بالاختبار", text:"بعد تطبيق الإصلاح، يُنشئ CodeShield AI اختبارًا برمجيًا تلقائيًا للتأكد من سلامة النظام وعدم تكرار الثغرة." }
+];
+
+function showStep(index){
+  document.querySelectorAll(".step").forEach((step,i)=>step.classList.toggle("active", i===index));
+  const data = stepData[index];
+  document.getElementById("stepDetail").innerHTML =
+    `<div><div class="eyebrow">STEP ${String(index+1).padStart(2,"0")}</div><h3>${data.title}</h3><p>${data.text}</p></div>`;
+}
+
+function renderNetworkLines(){
+  const container = document.getElementById("networkLines");
+  if(!container) return;
+  const area = container.parentElement;
+  const rect = area ? area.getBoundingClientRect() : null;
+  const w = rect && rect.width ? rect.width : 800;
+  const h = rect && rect.height ? rect.height : 455;
+  container.innerHTML = "";
+  const positions = [
+    ["9%","18%","50%","50%"],["42%","11%","50%","50%"],["91%","18%","50%","50%"],["6%","53%","50%","50%"],
+    ["94%","53%","50%","50%"],["17%","88%","50%","50%"],["45%","94%","50%","50%"],["83%","88%","50%","50%"]
+  ];
+  positions.forEach(p=>{
+    const line = document.createElement("div");
+    line.className = "line";
+    const x1 = parseFloat(p[0])/100*w, y1 = parseFloat(p[1])/100*h;
+    const x2 = parseFloat(p[2])/100*w, y2 = parseFloat(p[3])/100*h;
+    const dx = x2-x1, dy = y2-y1;
+    const length = Math.sqrt(dx*dx+dy*dy);
+    const angle = Math.atan2(dy,dx)*180/Math.PI;
+    line.style.left = p[0];
+    line.style.top = p[1];
+    line.style.width = length+"px";
+    line.style.transform = `rotate(${angle}deg)`;
+    container.appendChild(line);
+  });
+}
+
+function getFile(id){ return files.find(f=>f.id===id); }
+
+function codeBlockHTML(file){
+  const v = file.vuln;
+  return `
+    <div class="code-label">VULNERABLE CODE</div>
+    <div class="code-block before">${escapeHtml(v.before)}</div>
+    <div class="code-label">AI-SUGGESTED FIX</div>
+    <div class="code-block after">${escapeHtml(v.after)}</div>
+    <div class="code-label">GENERATED TEST</div>
+    <div class="code-block test">${escapeHtml(v.test)}</div>
+  `;
+}
+
+function escapeHtml(str){
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function selectFile(id){
+  state.selected = id;
+  const file = getFile(id);
+  if(!file) return;
+  const element = document.querySelector(`.device[data-id="${id}"]`);
+  const flagged = state.flaggedFiles.has(id);
+  const isFixed = element && element.classList.contains("iso");
+
+  document.getElementById("detailName").textContent = file.id;
+  document.getElementById("detailIP").textContent = file.module;
+  document.getElementById("detailStatus").textContent = flagged ? (isFixed ? "FIXED" : "VULNERABLE") : "CLEAN";
+  document.getElementById("detailRisk").textContent = flagged ? file.vuln.severity : "LOW";
+  document.getElementById("detailBehavior").textContent = flagged ? file.vuln.type : "No known issues";
+  document.getElementById("detailEvent").textContent = flagged ? (isFixed ? "Fix verified" : "Awaiting remediation") : "No active scan";
+  document.getElementById("detailAI").textContent = flagged
+    ? file.vuln.reason
+    : "Select a file and run a scan to inspect its current state.";
+
+  document.getElementById("detailCode").innerHTML = flagged ? codeBlockHTML(file) : "";
+
+  if(element){
+    document.querySelectorAll(".device").forEach(d=>d.style.outline="none");
+    element.style.outline = "1px solid var(--accent)";
+  }
+
+  if(state.mode === "analyst" && element && element.classList.contains("attacking")){
+    showAnalystControls();
+  } else {
+    document.getElementById("analystControls").style.display = "none";
+  }
+
+  updateAIBrain(id);
+}
+
+function updateAIBrain(id){
+  if(!id){
+    document.getElementById("aiThreat").textContent = "No active scan";
+    document.getElementById("aiRisk").textContent = "0 / 100";
+    document.getElementById("aiTarget").textContent = "—";
+    document.getElementById("aiAction").textContent = "MONITOR";
+    document.getElementById("aiConfidence").textContent = "—";
+    document.getElementById("aiReason").textContent = "Waiting for a scan to run.";
+    return;
+  }
+  const file = getFile(id);
+  if(!file) return;
+  const flagged = state.flaggedFiles.has(id);
+
+  document.getElementById("aiThreat").textContent = flagged ? file.vuln.type : "No active threat";
+  document.getElementById("aiRisk").textContent = flagged ? `${file.vuln.risk} / 100` : "8 / 100";
+  document.getElementById("aiTarget").textContent = flagged ? file.id : "—";
+  document.getElementById("aiAction").textContent = flagged ? "APPLY FIX" : "MONITOR";
+  document.getElementById("aiConfidence").textContent = flagged ? "97%" : "—";
+  document.getElementById("aiReason").textContent = flagged ? file.vuln.reason : "Current file remains within the simulated safe baseline.";
+}
+
+function addLog(type,text){
+  const time = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  state.logs.unshift({ time, type, text });
+  renderLogs();
+}
+
+function renderLogs(){
+  const container = document.getElementById("logs");
+  if(!container) return;
+  const input = document.getElementById("logSearch");
+  const search = input ? input.value.toLowerCase() : "";
+  container.innerHTML = "";
+  state.logs
+    .filter(log => `${log.type} ${log.text}`.toLowerCase().includes(search))
+    .slice(0,50)
+    .forEach(log=>{
+      const row = document.createElement("div");
+      row.className = "log";
+      const timeCell = document.createElement("div");
+      timeCell.className = "log-time"; timeCell.textContent = log.time;
+      const typeCell = document.createElement("div");
+      typeCell.className = `log-type ${log.type.toLowerCase()}`; typeCell.textContent = log.type;
+      const textCell = document.createElement("div");
+      textCell.className = "log-text"; textCell.textContent = log.text;
+      row.appendChild(timeCell); row.appendChild(typeCell); row.appendChild(textCell);
+      container.appendChild(row);
+    });
+}
+
+function filterLogs(){ renderLogs(); }
+
+function addTimeline(title, description){
+  const timeline = document.getElementById("threatTimeline");
+  if(!timeline) return;
+  const item = document.createElement("div");
+  item.className = "timeline-item";
+  const time = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  const timeCell = document.createElement("div");
+  timeCell.className = "timeline-time"; timeCell.textContent = time;
+  const titleCell = document.createElement("div");
+  titleCell.className = "timeline-title"; titleCell.textContent = title;
+  const descCell = document.createElement("div");
+  descCell.className = "timeline-desc"; descCell.textContent = description;
+  item.appendChild(timeCell); item.appendChild(titleCell); item.appendChild(descCell);
+  timeline.prepend(item);
+}
+
+function pickScanTarget(){
+  const available = files.filter(f=>!state.flaggedFiles.has(f.id));
+  if(available.length === 0) return null;
+  const preferred = available.find(f=>f.id === "db/queries.py");
+  if(preferred) return preferred;
+  return available[Math.floor(Math.random()*available.length)];
+}
+
+function runScan(){
+  const target = pickScanTarget();
+  if(!target){
+    toast("All files have already been scanned and fixed. Reset to run a new scenario.");
+    return;
+  }
+  state.found++;
+  const start = performance.now();
+  state.flaggedFiles.add(target.id);
+
+  const element = document.querySelector(`.device[data-id="${target.id}"]`);
+  if(element){
+    element.classList.add("attacking");
+    const status = element.querySelector(".status-text");
+    if(status) status.textContent = "VULNERABLE";
+  }
+
+  state.selected = target.id;
+  selectFile(target.id);
+
+  addLog("DETECT", `${target.vuln.type} detected in ${target.id}.`);
+  addTimeline("VULNERABILITY DETECTED", `${target.id} matched a known ${target.vuln.type} pattern.`);
+  addLog("ANALYZE", `Severity assessed as ${target.vuln.severity} (${target.vuln.risk}/100) for ${target.id}.`);
+  addTimeline("RISK ANALYZED", `Severity scored ${target.vuln.risk}/100 based on exploitability and impact.`);
+  updateStats();
+
+  if(state.mode === "autonomous"){
+    setTimeout(()=>{
+      addLog("FIX", `AI generated an automatic patch for ${target.id}.`);
+      addTimeline("AI FIX GENERATED", `A verified patch is being applied to ${target.id}.`);
+      setTimeout(()=>{ applyFix(target.id, performance.now()-start); }, 700);
+    }, 800);
+  } else {
+    showAnalystControls();
+    addLog("ALERT", `Analyst decision required for ${target.id}.`);
+    addTimeline("ANALYST REVIEW", "Manual remediation decision is required.");
+  }
+}
+
+function applyFix(id, responseTime=850){
+  const element = document.querySelector(`.device[data-id="${id}"]`);
+  if(element){
+    element.classList.remove("attacking");
+    element.classList.add("iso");
+    const status = element.querySelector(".status-text");
+    if(status) status.textContent = "FIXED";
+  }
+
+  state.fixed++;
+  state.tests++;
+  state.fixTimes.push(Math.round(responseTime));
+
+  addLog("FIX", `${id} patched successfully.`);
+  addLog("TEST", `Verification test generated and passed for ${id}.`);
+  addTimeline("VULNERABILITY FIXED", `${id} was patched and a regression test was generated.`);
+
+  document.getElementById("networkState").textContent = "CODEBASE SECURE";
+  selectFile(id);
+  document.getElementById("analystControls").style.display = "none";
+  updateStats();
+  toast(`Vulnerability fixed · ${Math.round(responseTime)} ms`);
+}
+
+function setMode(mode){
+  state.mode = mode;
+  document.getElementById("autoMode").classList.toggle("active", mode==="autonomous");
+  document.getElementById("analystMode").classList.toggle("active", mode==="analyst");
+  document.getElementById("modeLabel").textContent = mode==="autonomous" ? "AUTONOMOUS" : "ANALYST";
+  document.getElementById("analystControls").style.display = "none";
+  toast(mode==="autonomous" ? "Autonomous remediation enabled." : "Analyst review mode enabled.");
+}
+
+function showAnalystControls(){
+  document.getElementById("analystControls").style.display = "grid";
+}
+
+function analystAction(action){
+  const id = state.selected;
+  if(!id) return;
+  if(action === "fix"){
+    addLog("FIX", `Analyst approved the AI fix for ${id}.`);
+    applyFix(id, 1420);
+  } else {
+    const element = document.querySelector(`.device[data-id="${id}"]`);
+    if(element){
+      element.classList.remove("attacking");
+      const status = element.querySelector(".status-text");
+      if(status) status.textContent = "CLEAN";
+    }
+    state.flaggedFiles.delete(id);
+    addLog("SYSTEM", `Analyst marked ${id} as a false positive.`);
+    document.getElementById("analystControls").style.display = "none";
+    selectFile(id);
+    toast("File marked safe by analyst.");
+  }
+}
+
+function updateStats(){
+  document.getElementById("statFound").textContent = state.found;
+  document.getElementById("statFixed").textContent = state.fixed;
+  document.getElementById("statTests").textContent = state.tests;
+  if(state.fixTimes.length){
+    const avg = state.fixTimes.reduce((a,b)=>a+b,0)/state.fixTimes.length;
+    document.getElementById("statTime").textContent = Math.round(avg);
+  } else {
+    document.getElementById("statTime").textContent = "—";
+  }
+}
+
+function selectThreat(name, cardEl){
+  document.querySelectorAll(".threat-card").forEach(card=>{
+    card.style.borderColor = ""; card.style.background = "";
+  });
+  if(cardEl){
+    cardEl.style.borderColor = "var(--accent)";
+    cardEl.style.background = "var(--accent-dim)";
+  }
+  addLog("ALERT", `Vulnerability profile selected: ${name}.`);
+  addTimeline("VULNERABILITY PROFILE", `${name} selected for inspection.`);
+  toast(`${name} selected`);
+}
+
+const demoSteps = [
+  { title:"SYSTEM ONLINE", description:"Static analysis engine initialized.", width:10 },
+  { title:"VULNERABILITY DETECTED", description:"A SQL Injection pattern was found in db/queries.py.", width:28 },
+  { title:"RISK ANALYZED", description:"Severity assessed as HIGH based on exploitability and data exposure.", width:48 },
+  { title:"AI FIX GENERATED", description:"A parameterized query fix was generated automatically.", width:65 },
+  { title:"TEST GENERATED", description:"An automated regression test was created to verify the fix.", width:82 },
+  { title:"VERIFIED ✓", description:"The fix was applied and verified. The file is now secure.", width:100 }
+];
+
+let demoIndex = 0;
+let demoTimer = null;
+
+function startLiveDemo(){
+  document.getElementById("demoOverlay").classList.add("show");
+  demoIndex = 0;
+  document.getElementById("demoProgress").style.width = "0%";
+  runDemoStep();
+}
+
+function runDemoStep(){
+  if(demoIndex >= demoSteps.length) return;
+  const step = demoSteps[demoIndex];
+  document.getElementById("demoStatus").textContent = step.title;
+  document.getElementById("demoDescription").textContent = step.description;
+  document.getElementById("demoProgress").style.width = step.width+"%";
+  demoIndex++;
+  if(demoIndex < demoSteps.length){
+    demoTimer = setTimeout(runDemoStep, 1100);
+  } else {
+    demoTimer = setTimeout(()=>{ demoSimulationEffect(); }, 400);
+  }
+}
+
+function demoSimulationEffect(){
+  const target = document.querySelector('.device[data-id="db/queries.py"]');
+  if(target){
+    target.classList.remove("attacking");
+    target.classList.add("iso");
+    const status = target.querySelector(".status-text");
+    if(status) status.textContent = "FIXED";
+  }
+}
+
+function closeDemo(){
+  clearTimeout(demoTimer);
+  document.getElementById("demoOverlay").classList.remove("show");
+  const target = document.querySelector('.device[data-id="db/queries.py"]');
+  if(target && !state.flaggedFiles.has("db/queries.py")){
+    target.classList.remove("attacking","iso");
+    const status = target.querySelector(".status-text");
+    if(status) status.textContent = "CLEAN";
+  }
+}
+
+function resetSystem(){
+  state.found = 0; state.fixed = 0; state.tests = 0; state.fixTimes = [];
+  state.flaggedFiles.clear(); state.selected = null;
+
+  document.querySelectorAll(".device").forEach(device=>{
+    device.classList.remove("attacking","iso");
+    const status = device.querySelector(".status-text");
+    if(status) status.textContent = "CLEAN";
+    device.style.outline = "none";
+  });
+
+  document.getElementById("networkState").textContent = "SCANNING ACTIVE";
+  document.getElementById("detailName").textContent = "Select a file";
+  document.getElementById("detailIP").textContent = "Click any file on the codebase map.";
+  document.getElementById("detailStatus").textContent = "—";
+  document.getElementById("detailRisk").textContent = "—";
+  document.getElementById("detailBehavior").textContent = "—";
+  document.getElementById("detailEvent").textContent = "—";
+  document.getElementById("detailAI").textContent = "Select a file to inspect its current state.";
+  document.getElementById("detailCode").innerHTML = "";
+  document.getElementById("analystControls").style.display = "none";
+
+  state.logs = [
+    { time:"SYSTEM", type:"SYSTEM", text:"CodeShield AI scanning engine initialized successfully." },
+    { time:"SYSTEM", type:"SYSTEM", text:"Autonomous remediation simulation is ready." }
+  ];
+
+  document.getElementById("threatTimeline").innerHTML = `
+    <div class="timeline-item"><div class="timeline-time">SYSTEM</div><div class="timeline-title">Scanning engine initialized</div><div class="timeline-desc">Continuous code analysis is active.</div></div>
+    <div class="timeline-item"><div class="timeline-time">READY</div><div class="timeline-title">Waiting for a vulnerability</div><div class="timeline-desc">No active incident.</div></div>
+  `;
+
+  updateAIBrain(null);
+  updateStats();
+  renderLogs();
+  toast("System reset successfully.");
+}
+
+function setTheme(theme){
+  state.theme = theme;
+  document.body.classList.toggle("light", theme==="light");
+  const toggle = document.getElementById("themeToggle");
+  if(toggle){
+    toggle.querySelectorAll("button").forEach(btn=>btn.classList.toggle("active", btn.dataset.value===theme));
+  }
+  try{ localStorage.setItem("codeshield-theme", theme); }catch(e){}
+}
+
+function toggleTheme(){ setTheme(state.theme==="dark" ? "light" : "dark"); }
+
+function setPalette(palette){
+  document.body.classList.remove("palette-blue","palette-lavender","palette-pink","palette-gray");
+  document.body.classList.add(`palette-${palette}`);
+  state.palette = palette;
+  document.querySelectorAll(".palette").forEach(el=>el.classList.remove("active"));
+  const selector = palette==="lavender" ? ".p-lav" : `.p-${palette}`;
+  const active = document.querySelector(selector);
+  if(active) active.classList.add("active");
+  try{ localStorage.setItem("codeshield-palette", palette); }catch(e){}
+}
+
+function toggleLanguage(){ setLanguage(state.language==="en" ? "ar" : "en"); }
+
+function setLanguage(lang){
+  state.language = lang;
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang==="ar" ? "rtl" : "ltr";
+  const toggle = document.getElementById("langToggle");
+  if(toggle){
+    toggle.querySelectorAll("button").forEach(btn=>btn.classList.toggle("active", btn.dataset.value===lang));
+  }
+  try{ localStorage.setItem("codeshield-language", lang); }catch(e){}
+  toast(lang==="ar" ? "تم تغيير اتجاه الواجهة إلى العربية" : "Interface language set to English");
+}
+
+let toastTimer = null;
+function toast(message){
+  const el = document.getElementById("toast");
+  el.textContent = message;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove("show"), 2600);
+}
+
+function loadPreferences(){
+  let theme, palette, language;
+  try{
+    theme = localStorage.getItem("codeshield-theme");
+    palette = localStorage.getItem("codeshield-palette");
+    language = localStorage.getItem("codeshield-language");
+  }catch(e){ return; }
+  if(theme) setTheme(theme);
+  if(palette) setPalette(palette);
+  if(language) setLanguage(language);
+}
+
+document.addEventListener("keydown", event=>{
+  if(event.key === "Escape") closeDemo();
+});
+
+document.addEventListener("DOMContentLoaded", ()=>{
+  loadPreferences();
+  renderNetworkLines();
+  state.logs = [
+    { time:"SYSTEM", type:"SYSTEM", text:"CodeShield AI scanning engine initialized successfully." },
+    { time:"SYSTEM", type:"SYSTEM", text:"Static analysis is active." },
+    { time:"SYSTEM", type:"SYSTEM", text:"Autonomous remediation simulation is ready." }
+  ];
+  renderLogs();
+  updateStats();
+  showStep(0);
+  updateAIBrain(null);
+});
+</script>
+
+</body>
+</html>
