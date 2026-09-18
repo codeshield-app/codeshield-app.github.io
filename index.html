@@ -1,39 +1,45 @@
 <!--
-  CodeShield AI — Autonomous Code Security & Remediation Platform
+  CodeShield AI — Find it, fix it, and prove the fix.
   © 2026 Lamis Alanazi. All rights reserved.
   Built for the Tuwaiq Academy × SAIF program.
+
+  Engine v0.1 — deterministic, rule-based static analysis running fully client-side.
 -->
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
 <head>
 <meta charset="UTF-8">
 <meta name="author" content="Lamis Alanazi">
+<meta name="description" content="CodeShield AI — scans source code for security vulnerabilities, suggests a fix, and generates a test that proves the fix holds.">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CodeShield AI — Autonomous Code Security &amp; Remediation Platform</title>
+<title>CodeShield AI — Find it, fix it, prove it</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
-   CodeShield AI — AI-Powered Code Security & Auto-Remediation
+   CodeShield AI — Code Security & Verified Remediation
    ============================================================ */
 :root{
   --bg:#070b14; --panel:#0d1321; --card:#111827; --card2:#151e30; --line:rgba(255,255,255,.08);
-  --text:#f4f7fb; --muted:#91a0b7;
+  --text:#f4f7fb; --muted:#9aa9bf;
   --accent:#8cc8ff; --accent2:#b8a7ff; --accent-dim:rgba(140,200,255,.12);
   --danger:#ff6f91; --warning:#ffc56b; --success:#77e0b5; --blue:#75bfff; --purple:#b49aff;
   --shadow:0 20px 60px rgba(0,0,0,.30);
 }
 body.light{
   --bg:#f5f7fb; --panel:#fff; --card:#fff; --card2:#eef2f8; --line:rgba(20,30,50,.10);
-  --text:#172033; --muted:#667085;
-  --accent:#438fd0; --accent2:#816fd1; --accent-dim:rgba(67,143,208,.10);
+  --text:#172033; --muted:#55627a;
+  --accent:#2f7ec2; --accent2:#6f5cc4; --accent-dim:rgba(47,126,194,.10);
   --shadow:0 20px 50px rgba(30,50,80,.10);
 }
 body.palette-blue{ --accent:#8cc8ff; --accent2:#b8a7ff; }
 body.palette-lavender{ --accent:#c2a8ff; --accent2:#8bbcff; }
 body.palette-pink{ --accent:#ffabc6; --accent2:#c7a8ff; }
 body.palette-gray{ --accent:#b9c6d8; --accent2:#a8b3c5; }
+body.light.palette-lavender{ --accent:#6f5cc4; --accent2:#2f7ec2; }
+body.light.palette-pink{ --accent:#c2557e; --accent2:#6f5cc4; }
+body.light.palette-gray{ --accent:#54637a; --accent2:#54637a; }
 
 *{ box-sizing:border-box; margin:0; padding:0; }
 html{ scroll-behavior:smooth; }
@@ -43,8 +49,14 @@ body{
     radial-gradient(circle at 20% 10%, rgba(140,200,255,.08), transparent 28%),
     radial-gradient(circle at 80% 20%, rgba(184,167,255,.07), transparent 25%),
     var(--bg);
-  color:var(--text); font-family:Inter,Cairo,sans-serif; overflow-x:hidden;
-  transition:background .3s, color .3s;
+  color:var(--text); font-family:Inter,Cairo,system-ui,sans-serif; overflow-x:hidden;
+  transition:background .3s, color .3s; font-size:15px;
+}
+html[dir="rtl"] body{ font-family:Cairo,Inter,system-ui,sans-serif; }
+
+/* Anything that is always code / an identifier stays left-to-right in both languages */
+.ltr, .code-block, .mono, .device-name, .detail-name, .finding-code, .linkchip{
+  direction:ltr; text-align:left; unicode-bidi:isolate;
 }
 
 .grid-bg{
@@ -59,98 +71,175 @@ body{
 .orb.two{ background:var(--accent2); right:-150px; top:300px; }
 
 header{
-  position:fixed; top:0; left:0; right:0; height:76px; z-index:100;
-  display:flex; align-items:center; justify-content:space-between; padding:0 34px;
-  background:rgba(7,11,20,.72); backdrop-filter:blur(20px); border-bottom:1px solid var(--line);
+  position:fixed; top:0; left:0; right:0; height:74px; z-index:100;
+  display:flex; align-items:center; justify-content:space-between; gap:14px; padding:0 26px;
+  background:rgba(7,11,20,.80); backdrop-filter:blur(20px); border-bottom:1px solid var(--line);
 }
-body.light header{ background:rgba(255,255,255,.78); }
-.logo{ display:flex; align-items:center; gap:12px; cursor:pointer; }
+body.light header{ background:rgba(255,255,255,.85); }
+.logo{ display:flex; align-items:center; gap:11px; cursor:pointer; flex-shrink:0; direction:ltr; }
 .logo-mark{
-  width:38px; height:38px; border:1px solid var(--accent); border-radius:12px;
-  display:grid; place-items:center; color:var(--accent); font-weight:800;
-  box-shadow:0 0 25px rgba(140,200,255,.15);
+  width:36px; height:36px; border:1px solid var(--accent); border-radius:11px;
+  display:grid; place-items:center; color:var(--accent); font-weight:800; font-size:16px;
+  box-shadow:0 0 25px rgba(140,200,255,.15); flex-shrink:0;
 }
-.logo-text{ font-size:14px; font-weight:800; letter-spacing:2px; }
+.logo-text{ font-size:13px; font-weight:800; letter-spacing:1.5px; white-space:nowrap; }
 .logo-text span{ color:var(--accent); }
-nav{ display:flex; align-items:center; gap:5px; }
+nav{ display:flex; align-items:center; gap:2px; flex-wrap:nowrap; }
 .nav-btn{
-  border:0; background:transparent; color:var(--muted); padding:10px 11px; border-radius:10px;
-  cursor:pointer; font-size:10px; font-weight:700; letter-spacing:.6px; transition:.2s;
+  border:0; background:transparent; color:var(--muted); padding:9px 10px; border-radius:9px;
+  cursor:pointer; font-size:11px; font-weight:700; letter-spacing:.4px; transition:.2s;
+  font-family:inherit; white-space:nowrap;
 }
 .nav-btn:hover, .nav-btn.active{ color:var(--text); background:var(--accent-dim); }
-.header-actions{ display:flex; align-items:center; gap:9px; }
+.nav-btn.primary-nav{ color:var(--accent); border:1px solid rgba(140,200,255,.25); }
+.header-actions{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
 .icon-btn{
   border:1px solid var(--line); background:var(--panel); color:var(--text);
-  width:39px; height:39px; border-radius:11px; cursor:pointer; transition:.2s;
+  min-width:38px; height:38px; padding:0 10px; border-radius:10px; cursor:pointer; transition:.2s;
+  font-family:inherit; font-size:12px; font-weight:800;
 }
 .icon-btn:hover{ border-color:var(--accent); transform:translateY(-1px); }
-.online{ display:flex; align-items:center; gap:7px; color:var(--success); font-size:9px; font-weight:800; letter-spacing:1px; }
-.online-dot{ width:7px; height:7px; border-radius:50%; background:var(--success); box-shadow:0 0 12px var(--success); }
 
 .btn{
   border:1px solid var(--line); background:var(--card); color:var(--text); padding:12px 17px;
-  border-radius:12px; cursor:pointer; font-size:10px; font-weight:800; letter-spacing:.5px; transition:.2s;
+  border-radius:11px; cursor:pointer; font-size:12px; font-weight:800; letter-spacing:.4px;
+  transition:.2s; font-family:inherit;
 }
 .btn:hover{ transform:translateY(-2px); border-color:var(--accent); }
 .btn.primary{ background:var(--accent); color:#07101d; border-color:transparent; }
-.btn.danger{ background:var(--danger); color:#fff; border-color:transparent; }
-.btn.soft{ background:var(--accent-dim); color:var(--accent); border-color:rgba(140,200,255,.18); }
+body.light .btn.primary{ color:#fff; }
+.btn.danger{ background:var(--danger); color:#2a0511; border-color:transparent; }
+.btn.soft{ background:var(--accent-dim); color:var(--accent); border-color:rgba(140,200,255,.20); }
+.btn:focus-visible, .nav-btn:focus-visible, .icon-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
 
-.screen{ display:none; min-height:100vh; padding:110px 6vw 70px; }
+.screen{ display:none; min-height:100vh; padding:108px 5vw 70px; }
 .screen.active{ display:block; }
-.container{ width:min(1200px,100%); margin:auto; }
+.container{ width:min(1240px,100%); margin:auto; }
 
-#landing{ min-height:100vh; padding:0; display:none; align-items:center; justify-content:center; text-align:center; }
+#landing{ min-height:100vh; padding:100px 5vw 40px; display:none; align-items:center; justify-content:center; text-align:center; }
 #landing.active{ display:flex; }
 .hero{ width:min(1100px,100%); }
 .badge{
-  display:inline-flex; align-items:center; gap:8px; padding:8px 13px; border-radius:999px;
+  display:inline-flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px;
   border:1px solid var(--line); background:rgba(255,255,255,.025); color:var(--muted);
-  font-size:9px; font-weight:800; letter-spacing:1.5px; margin-bottom:25px;
+  font-size:11px; font-weight:800; letter-spacing:1.2px; margin-bottom:24px;
 }
 .pulse{ width:7px; height:7px; border-radius:50%; background:var(--success); box-shadow:0 0 14px var(--success); }
-.hero h1{ font-size:clamp(60px,11vw,150px); line-height:.86; letter-spacing:-6px; font-weight:800; margin-bottom:28px; }
+.hero h1{ font-size:clamp(52px,10vw,132px); line-height:.88; letter-spacing:-4px; font-weight:800; margin-bottom:22px; direction:ltr; }
 .hero h1 span{ color:var(--accent); }
-.hero-subtitle{ font-size:clamp(12px,1.6vw,17px); letter-spacing:4px; font-weight:700; color:var(--muted); margin-bottom:20px; }
-.hero-tagline{ font-size:11px; letter-spacing:2px; color:var(--accent); font-weight:800; margin-bottom:35px; }
+.hero-subtitle{ font-size:clamp(13px,1.6vw,17px); letter-spacing:3px; font-weight:700; color:var(--muted); margin-bottom:16px; }
+.hero-claim{
+  font-size:clamp(15px,2vw,22px); font-weight:700; color:var(--text); line-height:1.6;
+  max-width:760px; margin:0 auto 30px;
+}
+.hero-claim b{ color:var(--accent); }
 .hero-buttons{ display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap; }
-.hero-note{ margin-top:28px; color:var(--muted); font-size:9px; line-height:1.8; max-width:640px; margin-left:auto; margin-right:auto; }
+.hero-note{ margin-top:26px; color:var(--muted); font-size:12.5px; line-height:1.9; max-width:660px; margin-left:auto; margin-right:auto; }
 
-.page-title{ margin-bottom:38px; }
-.eyebrow{ color:var(--accent); font-size:9px; font-weight:800; letter-spacing:2px; margin-bottom:10px; }
-.page-title h2{ font-size:clamp(28px,5vw,50px); letter-spacing:-2px; margin-bottom:10px; }
-.page-title p{ color:var(--muted); max-width:780px; line-height:1.8; font-size:12px; }
+.page-title{ margin-bottom:34px; }
+.eyebrow{ color:var(--accent); font-size:11px; font-weight:800; letter-spacing:1.8px; margin-bottom:10px; }
+.page-title h2{ font-size:clamp(28px,5vw,48px); letter-spacing:-1.5px; margin-bottom:12px; line-height:1.15; }
+.page-title p{ color:var(--muted); max-width:820px; line-height:1.85; font-size:14px; }
+
+/* Grid and flex children default to min-width:auto, which lets a wide child
+   (a long line of code) stretch its whole column past the viewport. */
+.dashboard-grid > *, .scanner-grid > *, .about-grid > *, .threat-layout > *,
+.brain-grid > *, .side-stack > *, .settings-grid > *, .stats > *, .scan-summary > *{ min-width:0; }
 
 .card{
   background:linear-gradient(145deg, rgba(255,255,255,.025), rgba(255,255,255,.01)), var(--card);
-  border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow);
+  border:1px solid var(--line); border-radius:18px; box-shadow:var(--shadow);
+  min-width:0;
 }
-.card-pad{ padding:25px; }
+.card-pad{ padding:24px; }
+
+/* ---------- SCANNER (the real engine) ---------- */
+.scanner-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:start; }
+.scan-toolbar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-bottom:12px; }
+#codeInput{
+  width:100%; min-height:330px; resize:vertical; direction:ltr; text-align:left;
+  background:#0a0f1a; color:#e7ecf5; border:1px solid var(--line); border-radius:12px; padding:14px;
+  font-family:"JetBrains Mono",Menlo,Consolas,monospace; font-size:13px; line-height:1.7; outline:none;
+}
+body.light #codeInput{ background:#0f1524; color:#e7ecf5; }
+#codeInput:focus{ border-color:var(--accent); }
+select.lang-select{
+  background:var(--card2); color:var(--text); border:1px solid var(--line); border-radius:10px;
+  padding:11px 12px; font-size:12px; font-weight:700; font-family:inherit; cursor:pointer;
+}
+.engine-note{
+  margin-top:12px; padding:13px 15px; border:1px solid var(--line); border-radius:12px;
+  color:var(--muted); font-size:12px; line-height:1.85; background:rgba(255,255,255,.015);
+}
+.engine-note strong{ color:var(--text); }
+
+.scan-summary{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:14px; }
+.sum{ padding:14px; border:1px solid var(--line); border-radius:13px; background:var(--card); text-align:center; }
+.sum .v{ font-size:26px; font-weight:800; line-height:1; }
+.sum .k{ font-size:10.5px; color:var(--muted); font-weight:800; letter-spacing:.8px; margin-top:7px; }
+.sum.high .v{ color:var(--danger); } .sum.med .v{ color:var(--warning); } .sum.ok .v{ color:var(--success); }
+
+#findings{ display:grid; gap:12px; max-height:560px; overflow:auto; padding-inline-end:4px; }
+.finding{ border:1px solid var(--line); border-radius:14px; background:var(--card); overflow:hidden; }
+.finding-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+  padding:14px 16px; cursor:pointer; background:rgba(255,255,255,.015);
+}
+.finding-head:hover{ background:var(--accent-dim); }
+.finding-title{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; font-size:13.5px; font-weight:800; }
+.finding-meta{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.chip{ font-size:10.5px; font-weight:800; padding:4px 9px; border-radius:999px; letter-spacing:.4px; }
+.chip.high{ background:rgba(255,111,145,.14); color:var(--danger); }
+.chip.medium{ background:rgba(255,197,107,.14); color:var(--warning); }
+.chip.low{ background:rgba(119,224,181,.14); color:var(--success); }
+.chip.meta{ background:var(--accent-dim); color:var(--accent); }
+.chip.line{ background:rgba(255,255,255,.05); color:var(--muted); unicode-bidi:plaintext; }
+.finding-body{ display:none; padding:4px 16px 18px; }
+.finding.open .finding-body{ display:block; }
+.finding-code{
+  background:#0a0f1a; border:1px solid var(--line); border-left:3px solid var(--danger); border-radius:9px;
+  padding:11px 13px; font-family:"JetBrains Mono",Menlo,monospace; font-size:12px; line-height:1.7;
+  overflow-x:auto; white-space:pre-wrap; word-break:break-word; color:#ffd7e0;
+}
+.why{ color:var(--muted); font-size:13px; line-height:1.9; margin:14px 0 4px; }
+.fix-box{
+  margin-top:12px; padding:13px 15px; border-radius:11px;
+  background:rgba(119,224,181,.07); border:1px solid rgba(119,224,181,.18);
+}
+.fix-box .ai-label{ color:var(--success); }
+.proof-box{
+  margin-top:12px; padding:13px 15px; border-radius:11px;
+  background:rgba(180,154,255,.07); border:1px solid rgba(180,154,255,.20);
+}
+.proof-box .ai-label{ color:var(--purple); }
+.empty-state{ padding:40px 22px; text-align:center; color:var(--muted); font-size:13px; line-height:1.9; }
+.empty-state .big{ font-size:34px; margin-bottom:12px; }
 
 .about-grid{ display:grid; grid-template-columns:1.2fr .8fr; gap:18px; }
-.about-main h3{ font-size:26px; margin-bottom:15px; }
-.about-main p{ color:var(--muted); line-height:2; font-size:12px; }
+.about-main h3{ font-size:24px; margin-bottom:15px; line-height:1.4; }
+.about-main p{ color:var(--muted); line-height:2; font-size:14px; }
 .quote{
-  margin-top:24px; padding:20px; border-left:3px solid var(--accent); background:var(--accent-dim);
-  border-radius:0 14px 14px 0; line-height:1.9; font-size:12px;
+  margin-top:22px; padding:18px 20px; border-inline-start:3px solid var(--accent); background:var(--accent-dim);
+  border-radius:0 12px 12px 0; line-height:1.9; font-size:14px; font-weight:600;
 }
-.core-list{ display:grid; gap:12px; }
-.core-item{ padding:17px; border:1px solid var(--line); border-radius:15px; background:rgba(255,255,255,.015); }
-.core-item strong{ display:block; margin-bottom:6px; font-size:11px; }
-.core-item span{ color:var(--muted); font-size:10px; line-height:1.7; }
+html[dir="rtl"] .quote{ border-radius:12px 0 0 12px; }
+.core-list{ display:grid; gap:11px; }
+.core-item{ padding:16px; border:1px solid var(--line); border-radius:13px; background:rgba(255,255,255,.015); }
+.core-item strong{ display:block; margin-bottom:6px; font-size:13px; }
+.core-item span{ color:var(--muted); font-size:12.5px; line-height:1.75; }
 
-.pipeline{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:22px; }
-.step{ padding:22px 15px; border:1px solid var(--line); border-radius:17px; background:var(--card); cursor:pointer; transition:.25s; }
+.pipeline{ display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:20px; }
+.step{ padding:20px 15px; border:1px solid var(--line); border-radius:15px; background:var(--card); cursor:pointer; transition:.25s; text-align:start; font-family:inherit; color:inherit; }
 .step:hover, .step.active{ transform:translateY(-4px); border-color:var(--accent); background:var(--accent-dim); }
-.step-number{ font-size:9px; color:var(--accent); font-weight:800; margin-bottom:15px; }
-.step h4{ font-size:13px; margin-bottom:7px; }
-.step p{ font-size:9px; line-height:1.6; color:var(--muted); }
-.step-detail{ min-height:190px; display:flex; align-items:center; }
-.step-detail h3{ font-size:22px; margin-bottom:10px; }
-.step-detail p{ color:var(--muted); line-height:1.9; font-size:12px; max-width:850px; }
+.step-number{ font-size:11px; color:var(--accent); font-weight:800; margin-bottom:13px; }
+.step h4{ font-size:14px; margin-bottom:7px; }
+.step p{ font-size:11.5px; line-height:1.65; color:var(--muted); }
+.step-detail{ min-height:150px; display:flex; align-items:center; }
+.step-detail h3{ font-size:21px; margin-bottom:10px; }
+.step-detail p{ color:var(--muted); line-height:1.95; font-size:14px; max-width:880px; }
 
-.brain-grid{ display:grid; grid-template-columns:.9fr 1.1fr; gap:18px; }
-.brain-visual{ min-height:440px; display:grid; place-items:center; position:relative; overflow:hidden; }
+.brain-grid{ display:grid; grid-template-columns:.9fr 1.1fr; gap:18px; margin-top:18px; }
+.brain-visual{ min-height:380px; display:grid; place-items:center; position:relative; overflow:hidden; }
 .brain-core{
   width:150px; height:150px; border:1px solid var(--accent); border-radius:50%;
   display:grid; place-items:center; text-align:center; position:relative;
@@ -162,86 +251,83 @@ nav{ display:flex; align-items:center; gap:5px; }
 }
 .brain-core::after{ inset:-70px; animation-direction:reverse; animation-duration:20s; }
 @keyframes spin{ to{ transform:rotate(360deg); } }
-.brain-core strong{ font-size:22px; }
-.brain-core span{ display:block; color:var(--accent); font-size:8px; letter-spacing:2px; margin-top:5px; }
+@media (prefers-reduced-motion: reduce){ *{ animation:none!important; transition:none!important; } }
+.brain-core strong{ font-size:20px; }
+.brain-core span{ display:block; color:var(--accent); font-size:10px; letter-spacing:1.5px; margin-top:5px; }
 .brain-node{
-  position:absolute; padding:8px 11px; border:1px solid var(--line); background:var(--panel);
-  border-radius:10px; color:var(--muted); font-size:8px; font-weight:800; letter-spacing:.5px;
+  position:absolute; padding:8px 12px; border:1px solid var(--line); background:var(--panel);
+  border-radius:10px; color:var(--muted); font-size:10.5px; font-weight:800; letter-spacing:.4px;
 }
-.n1{ top:25%; left:12%; } .n2{ top:18%; right:12%; } .n3{ bottom:23%; left:10%; } .n4{ bottom:18%; right:10%; }
-.decision-grid{ display:grid; gap:10px; }
-.info-row{ display:flex; justify-content:space-between; gap:20px; padding:16px 17px; border:1px solid var(--line); border-radius:13px; }
-.info-row span:first-child{ color:var(--muted); font-size:9px; font-weight:700; }
-.info-row span:last-child{ text-align:right; font-size:10px; font-weight:800; }
-.confidence{ color:var(--success)!important; }
-.ai-box{ margin-top:15px; padding:15px; border-radius:13px; background:var(--accent-dim); border:1px solid rgba(140,200,255,.15); }
-.ai-label{ color:var(--accent); font-size:8px; font-weight:800; letter-spacing:1px; margin-bottom:7px; }
-.ai-box p{ color:var(--muted); font-size:9px; line-height:1.8; }
+.n1{ top:24%; left:10%; } .n2{ top:16%; right:10%; } .n3{ bottom:22%; left:8%; } .n4{ bottom:16%; right:8%; }
+.decision-grid{ display:grid; gap:9px; }
+.info-row{ display:flex; justify-content:space-between; gap:18px; padding:14px 15px; border:1px solid var(--line); border-radius:12px; }
+.info-row span:first-child{ color:var(--muted); font-size:11.5px; font-weight:700; }
+.info-row span:last-child{ text-align:end; font-size:12.5px; font-weight:800; }
+.ai-box{ margin-top:14px; padding:14px; border-radius:12px; background:var(--accent-dim); border:1px solid rgba(140,200,255,.15); }
+.ai-label{ color:var(--accent); font-size:10.5px; font-weight:800; letter-spacing:1px; margin-bottom:8px; }
+.ai-box p, .fix-box p, .proof-box p{ color:var(--muted); font-size:12.5px; line-height:1.85; }
 
-.code-label{ font-size:8px; color:var(--muted); font-weight:800; letter-spacing:1px; margin:12px 0 4px; }
+.code-label{ font-size:10.5px; color:var(--muted); font-weight:800; letter-spacing:1px; margin:13px 0 5px; }
 .code-block{
-  background:#0a0f1a; border:1px solid var(--line); border-radius:10px; padding:12px;
-  font-family:"JetBrains Mono",monospace; font-size:9px; line-height:1.7; overflow-x:auto;
-  white-space:pre-wrap; word-break:break-word;
+  background:#0a0f1a; border:1px solid var(--line); border-radius:9px; padding:12px;
+  font-family:"JetBrains Mono",Menlo,monospace; font-size:12px; line-height:1.7; overflow-x:auto;
+  white-space:pre-wrap; word-break:break-word; color:#e7ecf5;
 }
-body.light .code-block{ background:#0f1524; color:#e7ecf5; }
-.code-block.before{ border-left:3px solid var(--danger); }
-.code-block.after{ border-left:3px solid var(--success); }
-.code-block.test{ border-left:3px solid var(--purple); }
+.code-block.before{ border-inline-start:3px solid var(--danger); }
+.code-block.after{ border-inline-start:3px solid var(--success); }
+.code-block.test{ border-inline-start:3px solid var(--purple); }
 
 .threat-layout{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-.threat-list{ display:grid; gap:11px; }
-.threat-card{ padding:18px; border:1px solid var(--line); border-radius:15px; background:var(--card); cursor:pointer; transition:.2s; }
+.threat-list{ display:grid; gap:10px; }
+.threat-card{ padding:17px; border:1px solid var(--line); border-radius:14px; background:var(--card); cursor:pointer; transition:.2s; text-align:start; font-family:inherit; color:inherit; width:100%; }
 .threat-card:hover{ border-color:var(--accent); transform:translateY(-2px); }
-.threat-top{ display:flex; justify-content:space-between; gap:15px; margin-bottom:9px; }
-.threat-name{ font-weight:800; font-size:11px; }
-.risk{ font-size:8px; font-weight:800; padding:4px 8px; border-radius:999px; }
-.risk.high{ background:rgba(255,111,145,.12); color:var(--danger); }
-.risk.medium{ background:rgba(255,197,107,.12); color:var(--warning); }
-.risk.low{ background:rgba(119,224,181,.12); color:var(--success); }
-.threat-card p{ color:var(--muted); font-size:9px; line-height:1.7; }
+.threat-top{ display:flex; justify-content:space-between; gap:14px; margin-bottom:8px; align-items:center; }
+.threat-name{ font-weight:800; font-size:13px; }
+.threat-card p{ color:var(--muted); font-size:12.5px; line-height:1.75; }
 
-.timeline{ position:relative; padding-left:25px; }
-.timeline::before{ content:""; position:absolute; left:7px; top:5px; bottom:5px; width:1px; background:var(--line); }
-.timeline-item{ position:relative; padding-bottom:24px; }
+.timeline{ position:relative; padding-inline-start:24px; }
+.timeline::before{ content:""; position:absolute; inset-inline-start:7px; top:5px; bottom:5px; width:1px; background:var(--line); }
+.timeline-item{ position:relative; padding-bottom:22px; }
 .timeline-item::before{
-  content:""; position:absolute; left:-22px; top:4px; width:7px; height:7px; border-radius:50%;
+  content:""; position:absolute; inset-inline-start:-21px; top:4px; width:7px; height:7px; border-radius:50%;
   background:var(--accent); box-shadow:0 0 12px rgba(140,200,255,.5);
 }
-.timeline-time{ color:var(--accent); font-size:8px; font-weight:800; margin-bottom:5px; }
-.timeline-title{ font-size:10px; font-weight:800; margin-bottom:5px; }
-.timeline-desc{ color:var(--muted); font-size:9px; }
+.timeline-time{ color:var(--accent); font-size:10.5px; font-weight:800; margin-bottom:5px; }
+.timeline-title{ font-size:12.5px; font-weight:800; margin-bottom:5px; }
+.timeline-desc{ color:var(--muted); font-size:12px; line-height:1.7; }
 
 .architecture{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; align-items:stretch; }
 .arch-node{
-  min-height:180px; padding:20px; border:1px solid var(--line); border-radius:18px; background:var(--card);
+  min-height:180px; padding:20px; border:1px solid var(--line); border-radius:17px; background:var(--card);
   display:flex; flex-direction:column; justify-content:center; position:relative;
 }
 .arch-node:not(:last-child)::after{
-  content:"→"; position:absolute; right:-18px; top:50%; transform:translateY(-50%);
+  content:"→"; position:absolute; inset-inline-end:-18px; top:50%; transform:translateY(-50%);
   color:var(--accent); font-weight:800; z-index:2;
 }
-.arch-icon{ font-size:25px; margin-bottom:15px; color:var(--accent); }
-.arch-node h4{ font-size:12px; margin-bottom:8px; }
-.arch-node p{ color:var(--muted); font-size:9px; line-height:1.7; }
-.arch-note{ margin-top:20px; padding:18px; border:1px solid var(--line); border-radius:15px; color:var(--muted); font-size:10px; line-height:1.8; }
+html[dir="rtl"] .arch-node:not(:last-child)::after{ content:"←"; }
+.arch-icon{ font-size:24px; margin-bottom:14px; color:var(--accent); }
+.arch-node h4{ font-size:13.5px; margin-bottom:8px; }
+.arch-node p{ color:var(--muted); font-size:12px; line-height:1.75; }
+.arch-note{ margin-top:20px; padding:18px; border:1px solid var(--line); border-radius:14px; color:var(--muted); font-size:13px; line-height:1.9; }
+.arch-note strong{ color:var(--text); }
 
-.dashboard-top{ display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:25px; }
+.dashboard-top{ display:flex; justify-content:space-between; align-items:flex-end; gap:20px; margin-bottom:24px; flex-wrap:wrap; }
 .dashboard-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-.mode-switch{ display:flex; gap:6px; padding:4px; background:var(--card); border:1px solid var(--line); border-radius:12px; }
-.mode{ border:0; background:transparent; color:var(--muted); padding:8px 12px; border-radius:8px; cursor:pointer; font-size:8px; font-weight:800; }
+.mode-switch{ display:flex; gap:5px; padding:4px; background:var(--card); border:1px solid var(--line); border-radius:11px; }
+.mode{ border:0; background:transparent; color:var(--muted); padding:9px 13px; border-radius:8px; cursor:pointer; font-size:11px; font-weight:800; font-family:inherit; }
 .mode.active{ background:var(--accent-dim); color:var(--accent); }
 .stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:18px; }
-.stat{ padding:20px; }
-.stat-label{ color:var(--muted); font-size:8px; letter-spacing:1px; font-weight:800; margin-bottom:10px; }
+.stat{ padding:19px; }
+.stat-label{ color:var(--muted); font-size:10.5px; letter-spacing:.9px; font-weight:800; margin-bottom:10px; }
 .stat-value{ font-size:30px; font-weight:800; }
-.stat-small{ color:var(--muted); font-size:8px; margin-top:5px; }
+.stat-small{ color:var(--muted); font-size:10.5px; margin-top:6px; line-height:1.5; }
 .dashboard-grid{ display:grid; grid-template-columns:1.35fr .65fr; gap:18px; }
 
 .network{ min-height:540px; position:relative; overflow:hidden; }
-.network-head{ display:flex; justify-content:space-between; align-items:center; padding:20px 22px; border-bottom:1px solid var(--line); }
-.network-head h3{ font-size:13px; }
-.network-head span{ font-size:8px; color:var(--muted); }
+.network-head{ display:flex; justify-content:space-between; align-items:center; gap:12px; padding:18px 20px; border-bottom:1px solid var(--line); }
+.network-head h3{ font-size:14px; }
+.network-head span{ font-size:11px; color:var(--muted); font-weight:700; }
 .network-area{ position:relative; min-height:455px; background:radial-gradient(circle at center, rgba(140,200,255,.06), transparent 40%); }
 .network-lines{ position:absolute; inset:0; pointer-events:none; }
 .line{
@@ -250,49 +336,51 @@ body.light .code-block{ background:#0f1524; color:#e7ecf5; }
   opacity:.25; transform-origin:left center;
 }
 .center-node{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:105px; height:105px;
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:108px; height:108px;
   border:1px solid var(--accent); border-radius:50%; background:var(--panel);
   display:grid; place-items:center; text-align:center; box-shadow:0 0 35px rgba(140,200,255,.12);
 }
-.center-node strong{ display:block; font-size:12px; }
-.center-node span{ color:var(--accent); font-size:7px; letter-spacing:1px; }
+.center-node strong{ display:block; font-size:12.5px; }
+.center-node span{ color:var(--accent); font-size:10.5px; letter-spacing:.5px; }
 .device{
-  position:absolute; width:125px; padding:11px; border:1px solid var(--line); border-radius:13px;
-  background:rgba(13,19,33,.92); cursor:pointer; transition:.25s;
+  position:absolute; width:132px; padding:11px; border:1px solid var(--line); border-radius:12px;
+  background:rgba(13,19,33,.94); cursor:pointer; transition:.25s; text-align:start; font-family:inherit; color:inherit;
 }
-body.light .device{ background:rgba(255,255,255,.94); }
+body.light .device{ background:rgba(255,255,255,.96); }
 .device:hover{ transform:scale(1.04); border-color:var(--accent); }
 .device.attacking{ border-color:var(--danger); box-shadow:0 0 25px rgba(255,111,145,.18); animation:threatPulse 1s infinite; }
 .device.iso{ border-color:var(--success); box-shadow:0 0 25px rgba(119,224,181,.15); }
 @keyframes threatPulse{ 50%{ transform:scale(1.04); } }
-.device-status{ display:flex; align-items:center; gap:6px; font-size:7px; color:var(--success); font-weight:800; margin-bottom:8px; transition:color .2s; }
+.device-status{ display:flex; align-items:center; gap:6px; font-size:10.5px; color:var(--success); font-weight:800; margin-bottom:7px; transition:color .2s; }
 .device-status .dot{ width:5px; height:5px; background:currentColor; border-radius:50%; }
 .device.attacking .device-status{ color:var(--danger); }
-.device.iso .device-status{ color:var(--success); }
-.device-name{ font-size:9px; font-weight:800; margin-bottom:3px; }
-.device-ip{ color:var(--muted); font-size:8px; }
-.d1{ left:8%; top:14%; } .d2{ left:40%; top:7%; } .d3{ right:8%; top:14%; } .d4{ left:5%; top:49%; }
-.d5{ right:5%; top:49%; } .d6{ left:14%; bottom:9%; } .d7{ left:42%; bottom:5%; } .d8{ right:14%; bottom:9%; }
+.device-name{ font-size:11px; font-weight:800; margin-bottom:3px; }
+.device-role{ color:var(--muted); font-size:10px; line-height:1.4; }
+.d1{ left:7%; top:13%; } .d2{ left:39%; top:6%; } .d3{ right:7%; top:13%; } .d4{ left:4%; top:48%; }
+.d5{ right:4%; top:48%; } .d6{ left:13%; bottom:8%; } .d7{ left:41%; bottom:4%; } .d8{ right:13%; bottom:8%; }
 
-.side-stack{ display:grid; gap:18px; }
-.panel-title{ display:flex; align-items:center; justify-content:space-between; padding:19px 21px; border-bottom:1px solid var(--line); }
-.panel-title h3{ font-size:12px; }
-.panel-title span{ color:var(--muted); font-size:8px; }
-.detail{ padding:20px; }
-.detail-name{ font-size:17px; font-weight:800; margin-bottom:4px; word-break:break-all; }
-.detail-ip{ color:var(--muted); font-size:9px; margin-bottom:18px; }
-.detail-grid{ display:grid; gap:8px; }
-.detail-row{ display:flex; justify-content:space-between; padding:11px 12px; border-radius:10px; background:rgba(255,255,255,.025); border:1px solid var(--line); font-size:8px; }
+.side-stack{ display:grid; gap:18px; align-content:start; }
+.panel-title{ display:flex; align-items:center; justify-content:space-between; gap:12px; padding:17px 19px; border-bottom:1px solid var(--line); }
+.panel-title h3{ font-size:13px; }
+.panel-title span{ color:var(--muted); font-size:10.5px; font-weight:700; }
+.detail{ padding:19px; }
+.detail-name{ font-size:16px; font-weight:800; margin-bottom:4px; word-break:break-all; }
+.detail-role{ color:var(--muted); font-size:11.5px; margin-bottom:16px; }
+.detail-grid{ display:grid; gap:7px; }
+.detail-row{ display:flex; justify-content:space-between; gap:12px; padding:11px 12px; border-radius:9px; background:rgba(255,255,255,.025); border:1px solid var(--line); font-size:11.5px; }
 .detail-row span:first-child{ color:var(--muted); }
+.detail-row span:last-child{ font-weight:700; text-align:end; }
 .status-safe{ color:var(--success); font-weight:800; }
 .status-threat{ color:var(--danger); font-weight:800; }
 
 .log-card{ margin-top:18px; }
-.log-search{ display:flex; gap:8px; }
-.log-search input{ width:220px; border:1px solid var(--line); background:var(--card2); color:var(--text); outline:none; border-radius:9px; padding:9px 11px; font-size:9px; }
-.logs{ max-height:280px; overflow:auto; padding:0 20px 20px; }
-.log{ display:grid; grid-template-columns:80px 70px 1fr; gap:12px; padding:12px 0; border-bottom:1px solid var(--line); font-size:8px; }
-.log-time{ color:var(--muted); }
+.log-search input{
+  width:230px; max-width:48vw; border:1px solid var(--line); background:var(--card2); color:var(--text);
+  outline:none; border-radius:9px; padding:10px 12px; font-size:12px; font-family:inherit;
+}
+.logs{ max-height:300px; overflow:auto; padding:0 20px 20px; }
+.log{ display:grid; grid-template-columns:86px 78px 1fr; gap:12px; padding:11px 0; border-bottom:1px solid var(--line); font-size:11.5px; align-items:baseline; }
+.log-time{ color:var(--muted); direction:ltr; }
 .log-type{ font-weight:800; }
 .log-type.detect{ color:var(--warning); }
 .log-type.analyze{ color:var(--blue); }
@@ -300,36 +388,37 @@ body.light .device{ background:rgba(255,255,255,.94); }
 .log-type.test{ color:var(--purple); }
 .log-type.alert{ color:var(--danger); }
 .log-type.system{ color:var(--accent); }
-.log-text{ color:var(--muted); }
+.log-text{ color:var(--muted); line-height:1.6; }
 
 .analyst-actions{ display:grid; gap:7px; margin-top:12px; }
 
 .demo-overlay{
-  position:fixed; inset:0; z-index:300; background:rgba(3,6,12,.88); backdrop-filter:blur(18px);
+  position:fixed; inset:0; z-index:300; background:rgba(3,6,12,.90); backdrop-filter:blur(18px);
   display:none; align-items:center; justify-content:center; padding:25px;
 }
 .demo-overlay.show{ display:flex; }
 .demo-box{
-  width:min(720px,100%); padding:40px; border:1px solid var(--line); border-radius:25px; background:var(--panel);
+  width:min(720px,100%); padding:38px; border:1px solid var(--line); border-radius:22px; background:var(--panel);
   box-shadow:0 30px 100px rgba(0,0,0,.45); text-align:center;
 }
-.demo-kicker{ color:var(--accent); font-size:8px; font-weight:800; letter-spacing:2px; margin-bottom:20px; }
-.demo-status{ min-height:90px; display:grid; place-items:center; font-size:clamp(22px,4.5vw,40px); font-weight:800; letter-spacing:-1px; margin-bottom:20px; }
-.demo-description{ color:var(--muted); font-size:10px; line-height:1.8; min-height:42px; }
-.demo-progress{ height:4px; background:var(--card2); border-radius:99px; margin:25px 0; overflow:hidden; }
+.demo-kicker{ color:var(--accent); font-size:10.5px; font-weight:800; letter-spacing:1.6px; margin-bottom:18px; }
+.demo-status{ min-height:80px; display:grid; place-items:center; font-size:clamp(22px,4.5vw,38px); font-weight:800; letter-spacing:-1px; margin-bottom:16px; }
+.demo-description{ color:var(--muted); font-size:13px; line-height:1.8; min-height:46px; }
+.demo-progress{ height:5px; background:var(--card2); border-radius:99px; margin:24px 0; overflow:hidden; }
 .demo-progress span{ display:block; width:0%; height:100%; background:var(--accent); transition:width .6s; }
 .demo-actions{ display:flex; justify-content:center; gap:8px; }
 
 .settings-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-.setting-section{ padding:23px; }
-.setting-section h3{ font-size:13px; margin-bottom:18px; }
-.setting-label{ color:var(--muted); font-size:9px; font-weight:800; margin-bottom:9px; }
+.setting-section{ padding:22px; }
+.setting-section h3{ font-size:15px; margin-bottom:18px; }
+.setting-label{ color:var(--muted); font-size:11px; font-weight:800; margin-bottom:9px; letter-spacing:.6px; }
 .setting-row{ margin-bottom:22px; }
 .toggle{ display:flex; gap:7px; }
 .toggle button{ flex:1; }
 .toggle button.active{ background:var(--accent); color:#07101d; border-color:transparent; }
+body.light .toggle button.active{ color:#fff; }
 .palette-options{ display:flex; gap:8px; flex-wrap:wrap; }
-.palette{ width:40px; height:40px; border-radius:12px; border:2px solid transparent; cursor:pointer; }
+.palette{ width:40px; height:40px; border-radius:11px; border:2px solid transparent; cursor:pointer; }
 .palette.active{ border-color:var(--text); }
 .p-blue{ background:linear-gradient(135deg,#8cc8ff,#b8a7ff); }
 .p-lav{ background:linear-gradient(135deg,#c2a8ff,#8bbcff); }
@@ -337,43 +426,99 @@ body.light .device{ background:rgba(255,255,255,.94); }
 .p-gray{ background:linear-gradient(135deg,#b9c6d8,#a8b3c5); }
 
 .toast{
-  position:fixed; right:20px; bottom:20px; z-index:500; padding:13px 16px; background:var(--panel);
-  border:1px solid var(--line); border-radius:12px; box-shadow:var(--shadow); color:var(--text);
-  font-size:9px; font-weight:700; opacity:0; transform:translateY(10px); pointer-events:none; transition:.25s;
-  max-width:320px;
+  position:fixed; inset-inline-end:20px; bottom:20px; z-index:500; padding:14px 17px; background:var(--panel);
+  border:1px solid var(--line); border-radius:11px; box-shadow:var(--shadow); color:var(--text);
+  font-size:12.5px; font-weight:700; opacity:0; transform:translateY(10px); pointer-events:none; transition:.25s;
+  max-width:340px; line-height:1.6;
 }
 .toast.show{ opacity:1; transform:translateY(0); }
 
-.footer{ margin-top:45px; padding-top:20px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:15px; color:var(--muted); font-size:8px; }
+.footer{ margin-top:44px; padding-top:20px; border-top:1px solid var(--line); display:flex; justify-content:space-between; gap:14px; color:var(--muted); font-size:11px; flex-wrap:wrap; }
 .footer strong{ color:var(--accent); }
 
+@media(max-width:1180px){
+  nav .nav-btn{ padding:8px 7px; font-size:10.5px; }
+}
 @media(max-width:1050px){
-  nav{ display:none; }
-  .about-grid, .brain-grid, .threat-layout, .dashboard-grid, .settings-grid{ grid-template-columns:1fr; }
+  /* nav becomes a scrollable second row instead of disappearing */
+  header{ height:auto; flex-wrap:wrap; padding:10px 14px 6px; gap:8px; }
+  nav{
+    order:3; width:100%; overflow-x:auto; overflow-y:hidden; padding-bottom:5px; scrollbar-width:none;
+    /* fade both edges so it is obvious the row scrolls */
+    mask-image:linear-gradient(to right, transparent 0, #000 16px, #000 calc(100% - 22px), transparent 100%);
+  }
+  nav::-webkit-scrollbar{ display:none; }
+  .nav-btn{ font-size:11px; padding:9px 11px; }
+  .screen{ padding-top:136px; }
+  #landing{ padding-top:150px; }
+  .about-grid, .brain-grid, .threat-layout, .dashboard-grid, .settings-grid, .scanner-grid{ grid-template-columns:1fr; }
   .pipeline{ grid-template-columns:repeat(2,1fr); }
   .pipeline .step:last-child{ grid-column:span 2; }
   .architecture{ grid-template-columns:1fr; }
-  .arch-node:not(:last-child)::after{ content:"↓"; right:50%; top:auto; bottom:-25px; transform:translateX(50%); }
+  .arch-node{ min-height:auto; }
+  .arch-node:not(:last-child)::after{ content:"↓"; inset-inline-end:50%; top:auto; bottom:-24px; transform:translateX(50%); }
+  html[dir="rtl"] .arch-node:not(:last-child)::after{ content:"↓"; transform:translateX(-50%); }
   .stats{ grid-template-columns:repeat(2,1fr); }
+  #findings{ max-height:none; }
 }
 @media(max-width:650px){
-  header{ padding:0 15px; }
+  header{ padding:10px 14px 6px; }
   .logo-text{ display:none; }
-  .online{ display:none; }
-  .screen{ padding:100px 16px 50px; }
-  .hero h1{ letter-spacing:-4px; }
+  .screen{ padding:126px 16px 50px; }
+
+  /* the nav row scrolls — fade the edge so people can tell */
+  nav{ mask-image:linear-gradient(to right, #000 86%, transparent); }
+  html[dir="rtl"] nav{ mask-image:linear-gradient(to left, #000 86%, transparent); }
+
+  /* landing: close the dead space, stack the buttons */
+  #landing{ min-height:auto; padding:112px 16px 48px; }
+  .badge{ font-size:10px; letter-spacing:.7px; padding:7px 13px; margin-bottom:20px; }
+  .hero h1{ font-size:clamp(44px,13vw,62px); letter-spacing:-2px; }
+  .hero-subtitle{ font-size:12px; letter-spacing:1.6px; }
+  .hero-claim{ font-size:17px; margin-bottom:26px; }
+  .hero-buttons{ flex-direction:column; align-items:stretch; gap:9px; }
+  .hero-buttons .btn{ width:100%; padding:15px; }
+  .hero-note{ font-size:12.5px; margin-top:22px; }
+
+  .page-title h2{ font-size:26px; }
   .pipeline{ grid-template-columns:1fr; }
   .pipeline .step:last-child{ grid-column:auto; }
-  .stats{ grid-template-columns:1fr 1fr; }
-  .dashboard-top{ align-items:flex-start; flex-direction:column; }
-  .network-area{ min-height:620px; }
-  .device{ width:110px; }
-  .d1{ left:3%; top:8%; } .d2{ left:34%; top:3%; } .d3{ right:3%; top:8%; } .d4{ left:1%; top:42%; }
-  .d5{ right:1%; top:42%; } .d6{ left:5%; bottom:6%; } .d7{ left:34%; bottom:2%; } .d8{ right:5%; bottom:6%; }
-  .center-node{ width:90px; height:90px; }
-  .log{ grid-template-columns:65px 60px 1fr; }
-  .log-search input{ width:150px; }
+  .stats, .scan-summary{ grid-template-columns:1fr 1fr; }
+  .dashboard-top{ align-items:stretch; flex-direction:column; }
+  .dashboard-actions .btn, .dashboard-actions .mode-switch{ flex:1 1 auto; }
+
+  /* code keeps its structure and scrolls sideways instead of wrapping into soup */
+  #codeInput{ min-height:230px; font-size:12px; }
+  .code-block, .finding-code{ white-space:pre; overflow-x:auto; font-size:11.5px; }
+
+  /* repository map: a positioned graph does not fit a phone — show it as a list */
+  .network{ min-height:auto; }
+  .network-area{
+    min-height:auto; position:static; background:none; padding:14px;
+    display:grid; grid-template-columns:1fr 1fr; gap:10px;
+  }
+  .network-lines, .center-node{ display:none; }
+  #deviceLayer{ display:contents; }
+  .device{ position:static; width:auto; }
+  .device-name{ word-break:break-all; }
+
+  .log{ grid-template-columns:64px 60px 1fr; gap:9px; }
   .footer{ flex-direction:column; }
+
+  /* keep the ambient glow, but sized so it never widens the page */
+  .orb.one{ width:210px; height:210px; top:-70px; left:-50px; }
+  .orb.two{ width:230px; height:230px; right:-50px; top:300px; }
+
+  /* the toast was sitting on top of the content it described */
+  .toast{ inset-inline:14px; bottom:14px; max-width:none; text-align:center; }
+
+  /* the search box was crushed next to the panel heading */
+  .panel-title{ flex-wrap:wrap; row-gap:10px; }
+  .log-search, .log-search input{ width:100%; max-width:none; }
+}
+@media(max-width:400px){
+  .network-area{ grid-template-columns:1fr; }
+  .stats, .scan-summary{ grid-template-columns:1fr 1fr; }
 }
 </style>
 </head>
@@ -384,175 +529,198 @@ body.light .device{ background:rgba(255,255,255,.94); }
 <div class="orb two"></div>
 
 <header>
-  <div class="logo" onclick="go('landing')">
+  <div class="logo" onclick="go('landing')" role="button" tabindex="0">
     <div class="logo-mark">C</div>
     <div class="logo-text">CODE<span>SHIELD</span> AI</div>
   </div>
   <nav>
-    <button class="nav-btn" data-screen="about" onclick="go('about')">ABOUT</button>
-    <button class="nav-btn" data-screen="how" onclick="go('how')">HOW IT WORKS</button>
-    <button class="nav-btn" data-screen="brain" onclick="go('brain')">AI ENGINE</button>
-    <button class="nav-btn" data-screen="threats" onclick="go('threats')">VULNERABILITY CENTER</button>
-    <button class="nav-btn" data-screen="architecture" onclick="go('architecture')">ARCHITECTURE</button>
-    <button class="nav-btn" data-screen="dashboard" onclick="go('dashboard')">DASHBOARD</button>
-    <button class="nav-btn" data-screen="settings" onclick="go('settings')">SETTINGS</button>
+    <button class="nav-btn primary-nav" data-screen="scanner" onclick="go('scanner')" data-en="LIVE SCANNER" data-ar="الفاحص المباشر"></button>
+    <button class="nav-btn" data-screen="about" onclick="go('about')" data-en="ABOUT" data-ar="عن المشروع"></button>
+    <button class="nav-btn" data-screen="how" onclick="go('how')" data-en="HOW IT WORKS" data-ar="كيف يعمل"></button>
+    <button class="nav-btn" data-screen="threats" onclick="go('threats')" data-en="VULNERABILITIES" data-ar="الثغرات"></button>
+    <button class="nav-btn" data-screen="architecture" onclick="go('architecture')" data-en="ARCHITECTURE" data-ar="البنية"></button>
+    <button class="nav-btn" data-screen="dashboard" onclick="go('dashboard')" data-en="SIMULATION" data-ar="المحاكاة"></button>
+    <button class="nav-btn" data-screen="settings" onclick="go('settings')" data-en="SETTINGS" data-ar="الإعدادات"></button>
   </nav>
   <div class="header-actions">
-    <div class="online"><span class="online-dot"></span>SYSTEM ONLINE</div>
-    <button class="icon-btn" onclick="toggleLanguage()" title="Language">ع</button>
-    <button class="icon-btn" onclick="toggleTheme()" title="Theme">◐</button>
+    <button class="icon-btn" id="langBtn" onclick="toggleLanguage()" title="Language / اللغة">العربية</button>
+    <button class="icon-btn" onclick="toggleTheme()" title="Theme / المظهر" aria-label="Toggle theme">◐</button>
   </div>
 </header>
 
 <!-- LANDING -->
 <section id="landing" class="screen active">
   <div class="hero">
-    <div class="badge"><span class="pulse"></span>PROTOTYPE · SIMULATION</div>
+    <div class="badge"><span class="pulse"></span><span data-en="WORKING PROTOTYPE · RULE ENGINE v0.1" data-ar="نموذج أولي يعمل · محرك قواعد v0.1"></span></div>
     <h1>CODE<span>SHIELD</span></h1>
-    <div class="hero-subtitle">AI-POWERED CODE SECURITY PLATFORM</div>
-    <div class="hero-tagline">SCAN · DETECT · ANALYZE · FIX · VERIFY</div>
+    <div class="hero-subtitle" data-en="CODE SECURITY &amp; VERIFIED REMEDIATION" data-ar="أمن الشيفرة والإصلاح المُثبَت"></div>
+    <p class="hero-claim"
+       data-en="Other tools <b>suggest</b> a fix. CodeShield generates a test that <b>proves</b> it."
+       data-ar="الأدوات الأخرى <b>تقترح</b> إصلاحًا. كودشيلد يولّد اختبارًا <b>يُثبته</b>."></p>
     <div class="hero-buttons">
-      <button class="btn primary" onclick="go('dashboard')">ENTER DASHBOARD →</button>
-      <button class="btn" onclick="go('how')">EXPLORE SYSTEM</button>
-      <button class="btn soft" onclick="startLiveDemo()">▶ LIVE DEMO</button>
+      <button class="btn primary" onclick="go('scanner')" data-en="SCAN REAL CODE" data-ar="افحص كودًا حقيقيًا"></button>
+      <button class="btn" onclick="go('how')" data-en="HOW IT WORKS" data-ar="كيف يعمل"></button>
+      <button class="btn soft" onclick="go('dashboard')" data-en="SEE THE SIMULATION" data-ar="شاهد المحاكاة"></button>
     </div>
-    <div class="hero-note">
-      AI prototype that analyzes source code as it is written, detects security
-      vulnerabilities and structural bugs, suggests automatic fixes, and
-      generates tests to verify the fix — before the code ever ships.
-    </div>
+    <p class="hero-note"
+       data-en="Paste any Python, JavaScript, PHP, Ruby or shell snippet. The engine finds real vulnerabilities, maps each one to its CWE, proposes a fix, and writes a verification test — entirely in your browser. Your code never leaves this page."
+       data-ar="الصق أي مقطع بلغة بايثون أو جافاسكربت أو PHP أو روبي أو الشِل. يكتشف المحرك ثغرات حقيقية، يربط كل واحدة بمعرّف CWE الخاص بها، يقترح إصلاحًا، ويكتب اختبار تحقّق — كل ذلك داخل متصفحك. كودك لا يغادر هذه الصفحة أبدًا."></p>
   </div>
 </section>
 
-<!-- ABOUT -->
-<section id="about" class="screen"><div class="container">
+<!-- LIVE SCANNER -->
+<section id="scanner" class="screen"><div class="container">
   <div class="page-title">
-    <div class="eyebrow">01 · ABOUT</div>
-    <h2>درع الشفرة</h2>
-    <p>CodeShield AI is an AI prototype that reviews source code for security and structural issues and proposes verified fixes.</p>
+    <div class="eyebrow" data-en="01 · LIVE SCANNER" data-ar="٠١ · الفاحص المباشر"></div>
+    <h2 data-en="Paste code. Get findings, fixes, and proof." data-ar="الصق كودك. استلم الثغرات والإصلاح والإثبات."></h2>
+    <p data-en="This is the working engine, not a simulation. It runs 9 detection rules mapped to CWE and the OWASP Top 10 (2021), fully inside your browser." data-ar="هذا هو المحرك العامل فعليًا، وليس محاكاة. يشغّل ٩ قواعد اكتشاف مربوطة بمعرّفات CWE وقائمة OWASP العشرة (٢٠٢١)، بالكامل داخل متصفحك."></p>
   </div>
-  <div class="about-grid">
-    <div class="card card-pad about-main">
-      <h3>ثغرة تُكتشف، وحل يُقترح — قبل الإطلاق.</h3>
-      <p>
-        منصة ذكية موجهة لمهندسي البرمجيات تعمل على تحليل الشفرات البرمجية فور
-        كتابتها واكتشاف الثغرات الأمنية والأخطاء الهيكلية بدقة عالية. تستخدم
-        المنصة نماذج ذكاء اصطناعي متقدمة لا تكتفي بتحديد المشكلات فحسب، بل تقدم
-        اقتراحات تصحيح آلية وتنشئ اختبارات برمجية تلقائية للتحقق من سلامة النظام.
-      </p>
-      <p style="margin-top:14px;">
-        تهدف المنصة إلى تسريع عملية تطوير البرامج، تقليل التكاليف التشغيلية
-        للمؤسسات التقنية، وضمان أعلى معايير الأمان والجودة للمنتجات البرمجية
-        قبل إطلاقها.
-      </p>
-      <div class="quote">ثغرة تُكتشف، وحل يُقترح — قبل الإطلاق.</div>
-    </div>
+
+  <div class="scanner-grid">
     <div class="card card-pad">
-      <div class="eyebrow">CORE CAPABILITIES</div>
-      <div class="core-list">
-        <div class="core-item"><strong>01 · AI Static Analysis</strong><span>تحليل الشفرة البرمجية بالذكاء الاصطناعي فور كتابتها لاكتشاف الأخطاء الهيكلية والثغرات المحتملة.</span></div>
-        <div class="core-item"><strong>02 · Vulnerability Detection</strong><span>اكتشاف الثغرات الأمنية الشائعة مثل حقن SQL وXSS وبيانات الاعتماد المكشوفة بدقة عالية.</span></div>
-        <div class="core-item"><strong>03 · Automatic Fix Suggestions</strong><span>اقتراحات تصحيح آلية جاهزة للتطبيق مباشرة على الشفرة دون تغيير وظيفتها.</span></div>
-        <div class="core-item"><strong>04 · Automated Test Generation</strong><span>توليد اختبارات برمجية تلقائية للتحقق من سلامة الإصلاح ومنع تكرار الثغرة.</span></div>
+      <div class="scan-toolbar">
+        <select class="lang-select" id="langHint" aria-label="Language">
+          <option value="auto" data-en="Auto-detect" data-ar="كشف تلقائي"></option>
+          <option value="python">Python</option>
+          <option value="javascript">JavaScript</option>
+          <option value="php">PHP</option>
+          <option value="ruby">Ruby</option>
+          <option value="shell">Shell</option>
+        </select>
+        <button class="btn primary" onclick="runRealScan()" data-en="SCAN CODE" data-ar="افحص الكود"></button>
+        <button class="btn soft" onclick="loadSample()" data-en="LOAD SAMPLE" data-ar="مثال جاهز"></button>
+        <button class="btn" onclick="clearScanner()" data-en="CLEAR" data-ar="مسح"></button>
+      </div>
+      <textarea id="codeInput" spellcheck="false" placeholder="// paste your code here..."></textarea>
+      <div class="engine-note">
+        <strong data-en="Engine v0.1 — scope and honest limits:" data-ar="المحرك v0.1 — النطاق والحدود بصراحة:"></strong>
+        <span data-en="deterministic pattern matching, one line at a time. It does not follow data flow across statements, so a vulnerability split over several lines can be missed. There is no machine-learning model in this build — the AI layer is on the roadmap, and everything shown here is produced by explicit, auditable rules." data-ar="مطابقة أنماط حتمية، سطرًا بسطر. لا يتتبّع المحرك تدفّق البيانات عبر الجُمل البرمجية، لذا قد تفوته ثغرة موزّعة على عدة أسطر. لا يوجد نموذج تعلّم آلي في هذه النسخة — طبقة الذكاء الاصطناعي ضمن خارطة الطريق، وكل ما يظهر هنا ناتج عن قواعد صريحة قابلة للمراجعة."></span>
+      </div>
+    </div>
+
+    <div>
+      <div class="scan-summary">
+        <div class="sum"><div class="v" id="sumLines">0</div><div class="k" data-en="LINES SCANNED" data-ar="أسطر مفحوصة"></div></div>
+        <div class="sum high"><div class="v" id="sumHigh">0</div><div class="k" data-en="HIGH" data-ar="خطورة عالية"></div></div>
+        <div class="sum med"><div class="v" id="sumMed">0</div><div class="k" data-en="MEDIUM" data-ar="خطورة متوسطة"></div></div>
+        <div class="sum ok"><div class="v" id="sumRules">9</div><div class="k" data-en="RULES ACTIVE" data-ar="قواعد فعّالة"></div></div>
+      </div>
+      <div class="card">
+        <div class="panel-title">
+          <h3 data-en="FINDINGS" data-ar="النتائج"></h3>
+          <button class="btn" style="padding:8px 12px" onclick="downloadReport()" data-en="EXPORT JSON" data-ar="تصدير JSON"></button>
+        </div>
+        <div id="findings" style="padding:16px;"></div>
       </div>
     </div>
   </div>
   <div class="footer">
-    <span>CodeShield AI · AI Code Security &amp; Remediation</span>
-    <span>© 2026 Lamis Alanazi · All Rights Reserved</span>
+    <span data-en="CodeShield AI · Find it, fix it, prove it." data-ar="كودشيلد AI · اكتشفها، أصلحها، أثبت الإصلاح."></span>
+    <span class="ltr">© 2026 Lamis Alanazi · All Rights Reserved</span>
+  </div>
+</div></section>
+
+<!-- ABOUT -->
+<section id="about" class="screen"><div class="container">
+  <div class="page-title">
+    <div class="eyebrow" data-en="02 · ABOUT" data-ar="٠٢ · عن المشروع"></div>
+    <h2 data-en="CodeShield AI" data-ar="درع الشفرة"></h2>
+    <p data-en="A student prototype that reviews source code for security flaws, proposes a fix, and generates the test that proves the flaw is closed." data-ar="نموذج أولي طلابي يراجع الشيفرة المصدرية بحثًا عن الثغرات الأمنية، يقترح إصلاحًا، ويولّد الاختبار الذي يثبت إغلاق الثغرة."></p>
+  </div>
+  <div class="about-grid">
+    <div class="card card-pad about-main">
+      <h3 data-en="A vulnerability found is only half the job. Proving it's closed is the other half." data-ar="اكتشاف الثغرة نصف المهمة. إثبات إغلاقها هو النصف الآخر."></h3>
+      <p data-en="Most security tools stop at the alert: here is a problem, good luck. The developer then has to judge whether the suggested patch actually works — and whether the same flaw will quietly return three commits later. That gap between &quot;flagged&quot; and &quot;fixed&quot; is where real breaches live." data-ar="تتوقّف معظم أدوات الأمان عند التنبيه: هذه مشكلة، وبالتوفيق. بعدها يقع على المطوّر عبء الحكم على ما إذا كان الإصلاح المقترح يعمل فعلًا — وما إذا كانت الثغرة نفسها ستعود بصمت بعد ثلاثة تعديلات. في هذه الفجوة بين «مُبلَّغ عنها» و«مُصلَحة» تحدث الاختراقات الحقيقية."></p>
+      <p style="margin-top:14px;" data-en="CodeShield closes that gap. Every finding ships with three things: the reason it is dangerous, a concrete fix, and a regression test written to fail on the vulnerable version and pass on the patched one. The test is the receipt." data-ar="كودشيلد يسدّ هذه الفجوة. كل نتيجة تأتي بثلاثة أشياء: سبب خطورتها، وإصلاح ملموس، واختبار انحدار مكتوب ليفشل على النسخة المصابة وينجح على النسخة المُصلَحة. الاختبار هو الإيصال."></p>
+      <div class="quote" data-en="Find it, fix it, and prove the fix — before release." data-ar="اكتشفها، أصلحها، وأثبت الإصلاح — قبل الإطلاق."></div>
+    </div>
+    <div class="card card-pad">
+      <div class="eyebrow" data-en="WHAT MAKES IT DIFFERENT" data-ar="ما الذي يميّزه"></div>
+      <div class="core-list">
+        <div class="core-item">
+          <strong data-en="01 · Proof, not just a patch" data-ar="٠١ · إثبات لا مجرد إصلاح"></strong>
+          <span data-en="Each fix comes with a generated verification test. Most scanners stop at the suggestion." data-ar="كل إصلاح يأتي مع اختبار تحقّق مُولَّد. معظم الفواحص تتوقف عند الاقتراح."></span>
+        </div>
+        <div class="core-item">
+          <strong data-en="02 · Arabic-first explanations" data-ar="٠٢ · شرح عربي أولًا"></strong>
+          <span data-en="Every finding is explained in full Arabic, not machine-translated English. No major security tool does this for Arabic-speaking teams." data-ar="كل نتيجة مشروحة بعربية كاملة، لا ترجمة آلية عن الإنجليزية. لا توجد أداة أمان كبرى تقدّم هذا لفرق التطوير العربية."></span>
+        </div>
+        <div class="core-item">
+          <strong data-en="03 · Standards-mapped" data-ar="٠٣ · مربوط بالمعايير"></strong>
+          <span data-en="Every rule carries its CWE identifier and OWASP Top 10 (2021) category, so findings slot into existing security processes." data-ar="كل قاعدة تحمل معرّف CWE وتصنيف OWASP العشرة (٢٠٢١)، لتندمج النتائج في عمليات الأمان القائمة."></span>
+        </div>
+        <div class="core-item">
+          <strong data-en="04 · Nothing leaves the browser" data-ar="٠٤ · لا شيء يغادر المتصفح"></strong>
+          <span data-en="The engine is client-side. Proprietary code is never uploaded to a server — a real blocker for enterprise adoption of cloud scanners." data-ar="المحرك يعمل في جهة العميل. الشيفرة المملوكة لا تُرفع إلى أي خادم — وهذا عائق حقيقي أمام تبنّي المؤسسات للفواحص السحابية."></span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer">
+    <span data-en="CodeShield AI · Code Security &amp; Verified Remediation" data-ar="كودشيلد AI · أمن الشيفرة والإصلاح المُثبَت"></span>
+    <span class="ltr">© 2026 Lamis Alanazi · All Rights Reserved</span>
   </div>
 </div></section>
 
 <!-- HOW IT WORKS -->
 <section id="how" class="screen"><div class="container">
   <div class="page-title">
-    <div class="eyebrow">02 · HOW IT WORKS</div>
-    <h2>من تحليل الشفرة إلى التحقق الآلي.</h2>
-    <p>دورة المعالجة الأساسية التي يبني عليها CodeShield AI قراره الأمني.</p>
+    <div class="eyebrow" data-en="03 · HOW IT WORKS" data-ar="٠٣ · كيف يعمل"></div>
+    <h2 data-en="From raw code to a passing test." data-ar="من كود خام إلى اختبار ناجح."></h2>
+    <p data-en="Five stages. The fifth is the one that sets CodeShield apart." data-ar="خمس مراحل. المرحلة الخامسة هي التي تميّز كودشيلد."></p>
   </div>
   <div class="pipeline">
-    <div class="step active" onclick="showStep(0)"><div class="step-number">01</div><h4>SCAN</h4><p>Continuous code analysis.</p></div>
-    <div class="step" onclick="showStep(1)"><div class="step-number">02</div><h4>DETECT</h4><p>Identify known vulnerability patterns.</p></div>
-    <div class="step" onclick="showStep(2)"><div class="step-number">03</div><h4>ANALYZE</h4><p>Assess severity and impact.</p></div>
-    <div class="step" onclick="showStep(3)"><div class="step-number">04</div><h4>FIX</h4><p>Generate an automatic patch.</p></div>
-    <div class="step" onclick="showStep(4)"><div class="step-number">05</div><h4>VERIFY</h4><p>Generate a test and confirm the fix.</p></div>
+    <button class="step active" onclick="showStep(0)"><div class="step-number">01</div><h4 data-en="SCAN" data-ar="فحص"></h4><p data-en="Read the source line by line." data-ar="قراءة الشيفرة سطرًا بسطر."></p></button>
+    <button class="step" onclick="showStep(1)"><div class="step-number">02</div><h4 data-en="DETECT" data-ar="اكتشاف"></h4><p data-en="Match known vulnerability patterns." data-ar="مطابقة أنماط الثغرات المعروفة."></p></button>
+    <button class="step" onclick="showStep(2)"><div class="step-number">03</div><h4 data-en="ANALYZE" data-ar="تحليل"></h4><p data-en="Assign severity and CWE class." data-ar="تحديد الخطورة وتصنيف CWE."></p></button>
+    <button class="step" onclick="showStep(3)"><div class="step-number">04</div><h4 data-en="FIX" data-ar="إصلاح"></h4><p data-en="Propose a concrete patch." data-ar="اقتراح إصلاح ملموس."></p></button>
+    <button class="step" onclick="showStep(4)"><div class="step-number">05</div><h4 data-en="PROVE" data-ar="إثبات"></h4><p data-en="Generate the test that proves it." data-ar="توليد الاختبار الذي يثبته."></p></button>
   </div>
   <div class="card card-pad step-detail" id="stepDetail"></div>
-  <div class="card card-pad" style="margin-top:18px;">
-    <div class="eyebrow">ADVANCED AI INSIGHT</div>
-    <p style="color:var(--muted);font-size:11px;line-height:1.9;">
-      CodeShield AI can also estimate vulnerability severity and recommend a
-      fix using simulated decision logic. This layer supports the core
-      scan-and-remediate workflow and does not represent a production
-      machine-learning model.
-    </p>
-  </div>
-</div></section>
 
-<!-- AI ENGINE -->
-<section id="brain" class="screen"><div class="container">
-  <div class="page-title">
-    <div class="eyebrow">03 · AI DECISION ENGINE</div>
-    <h2>عقل الدرع.</h2>
-    <p>طبقة تحليلية تساعد النظام على تفسير الثغرة وتحديد الإجراء المناسب داخل بيئة المحاكاة.</p>
-  </div>
   <div class="brain-grid">
     <div class="card brain-visual">
-      <div class="brain-node n1">CODE</div>
-      <div class="brain-node n2">PATTERNS</div>
-      <div class="brain-node n3">RISK</div>
-      <div class="brain-node n4">FIX</div>
-      <div class="brain-core"><div><strong>AI</strong><span>SECURITY ENGINE</span></div></div>
+      <div class="brain-node n1" data-en="CODE" data-ar="الشيفرة"></div>
+      <div class="brain-node n2" data-en="PATTERNS" data-ar="الأنماط"></div>
+      <div class="brain-node n3" data-en="SEVERITY" data-ar="الخطورة"></div>
+      <div class="brain-node n4" data-en="PROOF" data-ar="الإثبات"></div>
+      <div class="brain-core"><div><strong data-en="RULES" data-ar="القواعد"></strong><span data-en="ENGINE v0.1" data-ar="المحرك v0.1"></span></div></div>
     </div>
     <div class="card card-pad">
-      <div class="eyebrow">CURRENT ANALYSIS</div>
+      <div class="eyebrow" data-en="WHY RULES, NOT A MODEL — YET" data-ar="لماذا قواعد لا نموذج — حتى الآن"></div>
+      <p style="color:var(--muted);font-size:13.5px;line-height:2;margin-bottom:14px;"
+         data-en="A rule engine was chosen deliberately for v0.1. Rules are deterministic: the same code always produces the same finding, every result can be audited back to a specific pattern, and there are no hallucinated vulnerabilities. For a security tool, being wrong quietly is worse than being narrow."
+         data-ar="اختير محرك القواعد عمدًا في النسخة v0.1. القواعد حتمية: الكود نفسه ينتج النتيجة نفسها دائمًا، وكل نتيجة يمكن تتبّعها إلى نمط محدّد، ولا توجد ثغرات مُتخيَّلة. في أداة أمان، الخطأ الصامت أسوأ من النطاق المحدود."></p>
       <div class="decision-grid">
-        <div class="info-row"><span>Vulnerability Type</span><span id="aiThreat">No active scan</span></div>
-        <div class="info-row"><span>Severity Score</span><span id="aiRisk">0 / 100</span></div>
-        <div class="info-row"><span>Affected File</span><span id="aiTarget">—</span></div>
-        <div class="info-row"><span>Recommended Action</span><span id="aiAction">MONITOR</span></div>
-        <div class="info-row"><span>Confidence</span><span id="aiConfidence" class="confidence">—</span></div>
-        <div class="ai-box"><div class="ai-label">REASONING</div><p id="aiReason">Waiting for a scan to run.</p></div>
+        <div class="info-row"><span data-en="Detection rules" data-ar="قواعد الاكتشاف"></span><span class="ltr">9</span></div>
+        <div class="info-row"><span data-en="CWE classes covered" data-ar="تصنيفات CWE المغطاة"></span><span class="ltr">89 · 78 · 79 · 295 · 327 · 338 · 434 · 502 · 798</span></div>
+        <div class="info-row"><span data-en="Languages recognised" data-ar="اللغات المدعومة"></span><span class="ltr">Python · JS · PHP · Ruby · Shell</span></div>
+        <div class="info-row"><span data-en="Runs on a server?" data-ar="هل يعمل على خادم؟"></span><span data-en="No — client-side only" data-ar="لا — في المتصفح فقط"></span></div>
+      </div>
+      <div class="ai-box">
+        <div class="ai-label" data-en="ROADMAP" data-ar="خارطة الطريق"></div>
+        <p data-en="v0.2 — AST parsing for cross-line data flow. v0.3 — benchmark run against the OWASP Benchmark and NIST Juliet suites, reporting detection rate and false-positive rate. v1.0 — an LLM layer that drafts the fix, with the rule engine kept as the verification gate."
+           data-ar="النسخة v0.2 — تحليل AST لتتبّع تدفّق البيانات عبر الأسطر. v0.3 — قياس على مجموعتي OWASP Benchmark وNIST Juliet مع نشر معدّل الاكتشاف ومعدّل الإيجابيات الكاذبة. v1.0 — طبقة نموذج لغوي تصيغ الإصلاح، مع إبقاء محرك القواعد بوابةً للتحقق."></p>
       </div>
     </div>
   </div>
 </div></section>
 
-<!-- VULNERABILITY CENTER -->
+<!-- VULNERABILITIES -->
 <section id="threats" class="screen"><div class="container">
   <div class="page-title">
-    <div class="eyebrow">04 · VULNERABILITY CENTER</div>
-    <h2>مركز الثغرات.</h2>
-    <p>عرض مبسط لأنواع الثغرات الأمنية التي يمكن للنظام اكتشافها وتحليلها داخل النموذج التجريبي.</p>
+    <div class="eyebrow" data-en="04 · VULNERABILITY CATALOG" data-ar="٠٤ · دليل الثغرات"></div>
+    <h2 data-en="What the engine detects." data-ar="ما الذي يكتشفه المحرك."></h2>
+    <p data-en="Every rule shipped in v0.1, with its CWE identifier. Select one to see it explained." data-ar="كل قاعدة في النسخة v0.1 مع معرّف CWE الخاص بها. اختر واحدة لعرض شرحها."></p>
   </div>
   <div class="threat-layout">
     <div class="card card-pad">
-      <div class="eyebrow">VULNERABILITY CATALOG</div>
-      <div class="threat-list">
-        <div class="threat-card" onclick="selectThreat('SQL Injection', this)">
-          <div class="threat-top"><div class="threat-name">SQL Injection</div><div class="risk high">HIGH</div></div>
-          <p>استعلامات قاعدة بيانات تُبنى بدمج نصي مباشر بدون تحقق، ما يسمح بتنفيذ أوامر SQL غير مصرح بها.</p>
-        </div>
-        <div class="threat-card" onclick="selectThreat('Hardcoded Credentials', this)">
-          <div class="threat-top"><div class="threat-name">Hardcoded Credentials</div><div class="risk high">HIGH</div></div>
-          <p>مفاتيح API أو كلمات مرور مكتوبة مباشرة داخل الشفرة بدل تخزينها في مدير أسرار آمن.</p>
-        </div>
-        <div class="threat-card" onclick="selectThreat('Cross-Site Scripting (XSS)', this)">
-          <div class="threat-top"><div class="threat-name">Cross-Site Scripting (XSS)</div><div class="risk medium">MEDIUM</div></div>
-          <p>إدخال مستخدم يُعرض دون تنقية، ما يسمح بتنفيذ سكربتات ضارة داخل المتصفح.</p>
-        </div>
-        <div class="threat-card" onclick="selectThreat('Insecure Deserialization', this)">
-          <div class="threat-top"><div class="threat-name">Insecure Deserialization</div><div class="risk low">LOW</div></div>
-          <p>تحويل بيانات غير موثوقة إلى كائنات برمجية دون تحقق كافٍ من مصدرها.</p>
-        </div>
-      </div>
+      <div class="eyebrow" data-en="ACTIVE RULES" data-ar="القواعد الفعّالة"></div>
+      <div class="threat-list" id="threatList"></div>
     </div>
     <div class="card card-pad">
-      <div class="eyebrow">LIVE SCAN TIMELINE</div>
-      <div class="timeline" id="threatTimeline">
-        <div class="timeline-item"><div class="timeline-time">SYSTEM</div><div class="timeline-title">Scanning engine initialized</div><div class="timeline-desc">Continuous code analysis is active.</div></div>
-        <div class="timeline-item"><div class="timeline-time">READY</div><div class="timeline-title">Waiting for a vulnerability</div><div class="timeline-desc">No active incident.</div></div>
-      </div>
+      <div class="eyebrow" data-en="RULE DETAIL" data-ar="تفاصيل القاعدة"></div>
+      <div id="threatDetail"></div>
     </div>
   </div>
 </div></section>
@@ -560,122 +728,91 @@ body.light .device{ background:rgba(255,255,255,.94); }
 <!-- ARCHITECTURE -->
 <section id="architecture" class="screen"><div class="container">
   <div class="page-title">
-    <div class="eyebrow">05 · SYSTEM ARCHITECTURE</div>
-    <h2>كيف يعمل الدرع؟</h2>
-    <p>البنية المنطقية للنموذج من استيراد الشفرة إلى تسليم تقرير التحقق.</p>
+    <div class="eyebrow" data-en="05 · SYSTEM ARCHITECTURE" data-ar="٠٥ · بنية النظام"></div>
+    <h2 data-en="How the pipeline is built." data-ar="كيف بُني خط المعالجة."></h2>
+    <p data-en="From source intake to a verification report." data-ar="من استقبال الشيفرة إلى تقرير التحقّق."></p>
   </div>
   <div class="architecture">
-    <div class="arch-node"><div class="arch-icon">◉</div><h4>Code Ingestion</h4><p>Import source files from the repository or as they are written.</p></div>
-    <div class="arch-node"><div class="arch-icon">⌁</div><h4>Static &amp; AI Analysis</h4><p>Analyze code with static rules and AI pattern models.</p></div>
-    <div class="arch-node"><div class="arch-icon">◈</div><h4>Vulnerability Detection</h4><p>Identify security flaws and structural risks.</p></div>
-    <div class="arch-node"><div class="arch-icon">✦</div><h4>Auto-Fix Engine</h4><p>Generate a ready-to-apply automatic patch.</p></div>
-    <div class="arch-node"><div class="arch-icon">▤</div><h4>Test &amp; Report</h4><p>Generate a verification test and a safety report.</p></div>
+    <div class="arch-node"><div class="arch-icon">◉</div><h4 data-en="Code Intake" data-ar="استقبال الشيفرة"></h4><p data-en="Source is read in the browser. Nothing is uploaded." data-ar="تُقرأ الشيفرة في المتصفح. لا يُرفع شيء."></p></div>
+    <div class="arch-node"><div class="arch-icon">⌁</div><h4 data-en="Rule Engine" data-ar="محرك القواعد"></h4><p data-en="9 deterministic rules run over every non-comment line." data-ar="٩ قواعد حتمية تمرّ على كل سطر غير تعليقي."></p></div>
+    <div class="arch-node"><div class="arch-icon">◈</div><h4 data-en="Classification" data-ar="التصنيف"></h4><p data-en="Each hit gets a CWE id, OWASP category and severity." data-ar="كل نتيجة تأخذ معرّف CWE وتصنيف OWASP ودرجة خطورة."></p></div>
+    <div class="arch-node"><div class="arch-icon">✦</div><h4 data-en="Fix Synthesis" data-ar="صياغة الإصلاح"></h4><p data-en="A concrete, language-aware patch is produced." data-ar="يُنتَج إصلاح ملموس يراعي لغة البرمجة."></p></div>
+    <div class="arch-node"><div class="arch-icon">▤</div><h4 data-en="Proof Generation" data-ar="توليد الإثبات"></h4><p data-en="A regression test is written and exported with the report." data-ar="يُكتب اختبار انحدار ويُصدَّر مع التقرير."></p></div>
   </div>
   <div class="arch-note">
-    <strong style="color:var(--text);">Prototype boundary:</strong>
-    CodeShield AI demonstrates the scan-and-remediate workflow on sample code
-    files inside a simulated environment. It does not commit changes to a
-    real production repository.
+    <strong data-en="Scope of this build:" data-ar="نطاق هذه النسخة:"></strong>
+    <span data-en="the Live Scanner is fully functional and is what you should judge. The Simulation screen is a separate illustrative mock-up of how continuous monitoring would look across a whole repository; it uses fixed sample data and is labelled as such throughout. CodeShield does not commit changes to any repository."
+          data-ar="الفاحص المباشر يعمل بالكامل، وهو ما ينبغي تقييمه. أما شاشة المحاكاة فهي نموذج توضيحي منفصل يبيّن كيف ستبدو المراقبة المستمرة على مستودع كامل؛ تستخدم بيانات ثابتة وهي موسومة بذلك في كل موضع. كودشيلد لا يُجري أي تعديل فعلي على أي مستودع."></span>
   </div>
 </div></section>
 
-<!-- DASHBOARD -->
+<!-- SIMULATION -->
 <section id="dashboard" class="screen"><div class="container">
   <div class="dashboard-top">
     <div class="page-title" style="margin:0;">
-      <div class="eyebrow">06 · SECURITY OPERATIONS</div>
-      <h2>CODESHIELD CONTROL</h2>
-      <p>راقب قاعدة الشفرة البرمجية وشغّل فحص أمان كامل لاكتشاف الثغرات وإصلاحها تلقائيًا.</p>
+      <div class="eyebrow" data-en="06 · SIMULATION — ILLUSTRATIVE MOCK-UP" data-ar="٠٦ · المحاكاة — نموذج توضيحي"></div>
+      <h2 data-en="CODESHIELD CONTROL" data-ar="مركز تحكّم كودشيلد"></h2>
+      <p data-en="A concept view of repository-wide monitoring, driven by fixed sample data. For real detection, use the Live Scanner." data-ar="عرض تصوّري لمراقبة مستودع كامل، يعمل ببيانات عيّنة ثابتة. للاكتشاف الحقيقي استخدم الفاحص المباشر."></p>
     </div>
     <div class="dashboard-actions">
       <div class="mode-switch">
-        <button class="mode active" id="autoMode" onclick="setMode('autonomous')">AUTONOMOUS</button>
-        <button class="mode" id="analystMode" onclick="setMode('analyst')">ANALYST</button>
+        <button class="mode active" id="autoMode" onclick="setMode('autonomous')" data-en="AUTONOMOUS" data-ar="تلقائي"></button>
+        <button class="mode" id="analystMode" onclick="setMode('analyst')" data-en="ANALYST" data-ar="محلّل"></button>
       </div>
-      <button class="btn soft" onclick="startLiveDemo()">▶ LIVE DEMO</button>
-      <button class="btn danger" onclick="runScan()">⚡ SCAN CODEBASE</button>
-      <button class="btn" onclick="resetSystem()">RESET</button>
+      <button class="btn soft" onclick="startLiveDemo()" data-en="▶ WALKTHROUGH" data-ar="▶ جولة توضيحية"></button>
+      <button class="btn primary" onclick="runScan()" data-en="SCAN SAMPLE REPO" data-ar="افحص المستودع التجريبي"></button>
+      <button class="btn" onclick="resetSystem()" data-en="RESET" data-ar="إعادة ضبط"></button>
     </div>
   </div>
 
   <div class="stats">
-    <div class="card stat"><div class="stat-label">VULNERABILITIES FOUND</div><div class="stat-value" id="statFound">0</div><div class="stat-small">simulated findings</div></div>
-    <div class="card stat"><div class="stat-label">FIXES APPLIED</div><div class="stat-value" id="statFixed">0</div><div class="stat-small">auto-remediated files</div></div>
-    <div class="card stat"><div class="stat-label">AVG FIX TIME</div><div class="stat-value" id="statTime">—</div><div class="stat-small">milliseconds</div></div>
-    <div class="card stat"><div class="stat-label">TESTS GENERATED</div><div class="stat-value" id="statTests">0</div><div class="stat-small">verification tests</div></div>
+    <div class="card stat"><div class="stat-label" data-en="VULNERABILITIES FOUND" data-ar="ثغرات مكتشَفة"></div><div class="stat-value" id="statFound">0</div><div class="stat-small" data-en="in sample data" data-ar="في البيانات التجريبية"></div></div>
+    <div class="card stat"><div class="stat-label" data-en="FIXES APPLIED" data-ar="إصلاحات مطبَّقة"></div><div class="stat-value" id="statFixed">0</div><div class="stat-small" data-en="simulated files" data-ar="ملفات محاكاة"></div></div>
+    <div class="card stat"><div class="stat-label" data-en="FILES SECURED" data-ar="ملفات مؤمَّنة"></div><div class="stat-value" id="statSecured">0 / 8</div><div class="stat-small" data-en="of the sample repository" data-ar="من المستودع التجريبي"></div></div>
+    <div class="card stat"><div class="stat-label" data-en="TESTS GENERATED" data-ar="اختبارات مُولَّدة"></div><div class="stat-value" id="statTests">0</div><div class="stat-small" data-en="verification tests" data-ar="اختبارات تحقّق"></div></div>
   </div>
 
   <div class="dashboard-grid">
     <div class="card network">
-      <div class="network-head"><h3>CODEBASE MAP</h3><span id="networkState">SCANNING ACTIVE</span></div>
+      <div class="network-head"><h3 data-en="REPOSITORY MAP" data-ar="خريطة المستودع"></h3><span id="networkState" data-en="MONITORING" data-ar="قيد المراقبة"></span></div>
       <div class="network-area">
         <div class="network-lines" id="networkLines"></div>
-        <div class="center-node"><div><strong>CodeShield</strong><span>AI ENGINE</span></div></div>
-
-        <div class="device d1" data-id="auth/login.py" onclick="selectFile('auth/login.py')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">auth/login.py</div><div class="device-ip">Authentication Service</div>
-        </div>
-        <div class="device d2" data-id="db/queries.py" onclick="selectFile('db/queries.py')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">db/queries.py</div><div class="device-ip">Database Query Layer</div>
-        </div>
-        <div class="device d3" data-id="api/payments.js" onclick="selectFile('api/payments.js')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">api/payments.js</div><div class="device-ip">Payment Gateway API</div>
-        </div>
-        <div class="device d4" data-id="web/search.jsx" onclick="selectFile('web/search.jsx')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">web/search.jsx</div><div class="device-ip">Search Component</div>
-        </div>
-        <div class="device d5" data-id="services/upload.php" onclick="selectFile('services/upload.php')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">upload.php</div><div class="device-ip">File Upload Service</div>
-        </div>
-        <div class="device d6" data-id="config/settings.env" onclick="selectFile('config/settings.env')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">settings.env</div><div class="device-ip">Environment Config</div>
-        </div>
-        <div class="device d7" data-id="scripts/deploy.sh" onclick="selectFile('scripts/deploy.sh')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">deploy.sh</div><div class="device-ip">Deployment Script</div>
-        </div>
-        <div class="device d8" data-id="mail/notify.rb" onclick="selectFile('mail/notify.rb')">
-          <div class="device-status"><span class="dot"></span><span class="status-text">CLEAN</span></div>
-          <div class="device-name">notify.rb</div><div class="device-ip">Notification Service</div>
-        </div>
+        <div class="center-node"><div><strong>CodeShield</strong><span data-en="RULE ENGINE" data-ar="محرك القواعد"></span></div></div>
+        <div id="deviceLayer"></div>
       </div>
     </div>
 
     <div class="side-stack">
       <div class="card">
-        <div class="panel-title"><h3>FILE INTELLIGENCE</h3><span>LIVE</span></div>
+        <div class="panel-title"><h3 data-en="FILE DETAIL" data-ar="تفاصيل الملف"></h3><span data-en="SAMPLE" data-ar="عيّنة"></span></div>
         <div class="detail">
-          <div class="detail-name" id="detailName">Select a file</div>
-          <div class="detail-ip" id="detailIP">Click any file on the codebase map.</div>
+          <div class="detail-name" id="detailName">—</div>
+          <div class="detail-role" id="detailRole" data-en="Select a file on the repository map." data-ar="اختر ملفًا من خريطة المستودع."></div>
           <div class="detail-grid">
-            <div class="detail-row"><span>Status</span><span id="detailStatus">—</span></div>
-            <div class="detail-row"><span>Severity</span><span id="detailRisk">—</span></div>
-            <div class="detail-row"><span>Vulnerability</span><span id="detailBehavior">—</span></div>
-            <div class="detail-row"><span>Last Scan</span><span id="detailEvent">—</span></div>
+            <div class="detail-row"><span data-en="Status" data-ar="الحالة"></span><span id="detailStatus">—</span></div>
+            <div class="detail-row"><span data-en="Severity" data-ar="الخطورة"></span><span id="detailRisk">—</span></div>
+            <div class="detail-row"><span data-en="Vulnerability" data-ar="الثغرة"></span><span id="detailBehavior">—</span></div>
+            <div class="detail-row"><span data-en="Last scan" data-ar="آخر فحص"></span><span id="detailEvent">—</span></div>
           </div>
-          <div class="ai-box"><div class="ai-label">SUGGESTED FIX</div><p id="detailAI">Select a file to inspect its current state.</p></div>
+          <div class="ai-box"><div class="ai-label" data-en="ANALYSIS" data-ar="التحليل"></div><p id="detailAI"></p></div>
           <div id="detailCode"></div>
           <div id="analystControls" class="analyst-actions" style="display:none;">
-            <button class="btn danger" onclick="analystAction('fix')">APPLY AI FIX</button>
-            <button class="btn" onclick="analystAction('ignore')">MARK AS FALSE POSITIVE</button>
+            <button class="btn primary" onclick="analystAction('fix')" data-en="APPLY FIX" data-ar="طبّق الإصلاح"></button>
+            <button class="btn" onclick="analystAction('ignore')" data-en="MARK AS FALSE POSITIVE" data-ar="وسمها كإيجابية كاذبة"></button>
           </div>
         </div>
       </div>
 
       <div class="card">
-        <div class="panel-title"><h3>REMEDIATION PIPELINE</h3><span id="modeLabel">AUTONOMOUS</span></div>
+        <div class="panel-title"><h3 data-en="PIPELINE" data-ar="خط المعالجة"></h3><span id="modeLabel" data-en="AUTONOMOUS" data-ar="تلقائي"></span></div>
         <div class="detail">
-          <div class="detail-row"><span>SCAN</span><span class="status-safe">ACTIVE</span></div>
-          <div class="detail-row"><span>DETECT</span><span class="status-safe">READY</span></div>
-          <div class="detail-row"><span>ANALYZE</span><span class="status-safe">READY</span></div>
-          <div class="detail-row"><span>FIX</span><span class="status-safe">READY</span></div>
-          <div class="detail-row"><span>TEST</span><span class="status-safe">LIVE</span></div>
+          <div class="detail-grid">
+            <div class="detail-row"><span>SCAN</span><span class="status-safe" data-en="ACTIVE" data-ar="نشط"></span></div>
+            <div class="detail-row"><span>DETECT</span><span class="status-safe" data-en="READY" data-ar="جاهز"></span></div>
+            <div class="detail-row"><span>ANALYZE</span><span class="status-safe" data-en="READY" data-ar="جاهز"></span></div>
+            <div class="detail-row"><span>FIX</span><span class="status-safe" data-en="READY" data-ar="جاهز"></span></div>
+            <div class="detail-row"><span>PROVE</span><span class="status-safe" data-en="READY" data-ar="جاهز"></span></div>
+          </div>
         </div>
       </div>
     </div>
@@ -683,612 +820,910 @@ body.light .device{ background:rgba(255,255,255,.94); }
 
   <div class="card log-card">
     <div class="panel-title">
-      <h3>LIVE SCAN LOG</h3>
-      <div class="log-search"><input id="logSearch" type="text" placeholder="Search events..." oninput="filterLogs()"></div>
+      <h3 data-en="EVENT LOG" data-ar="سجل الأحداث"></h3>
+      <div class="log-search"><input id="logSearch" type="text" oninput="renderLogs()" data-placeholder-en="Search events..." data-placeholder-ar="ابحث في الأحداث..."></div>
     </div>
     <div class="logs" id="logs"></div>
   </div>
 
   <div class="footer">
-    <span><strong>CodeShield AI</strong> · DETECT VULNERABILITIES. FIX WITH CONFIDENCE.</span>
-    <span>© 2026 Lamis Alanazi · All Rights Reserved</span>
+    <span data-en="CodeShield AI · Find it, fix it, prove it." data-ar="كودشيلد AI · اكتشفها، أصلحها، أثبت الإصلاح."></span>
+    <span class="ltr">© 2026 Lamis Alanazi · All Rights Reserved</span>
   </div>
 </div></section>
 
 <!-- SETTINGS -->
 <section id="settings" class="screen"><div class="container">
   <div class="page-title">
-    <div class="eyebrow">07 · SETTINGS</div>
-    <h2>System Preferences.</h2>
-    <p>Customize the interface appearance and language.</p>
+    <div class="eyebrow" data-en="07 · SETTINGS" data-ar="٠٧ · الإعدادات"></div>
+    <h2 data-en="Preferences" data-ar="التفضيلات"></h2>
+    <p data-en="Appearance and interface language." data-ar="المظهر ولغة الواجهة."></p>
   </div>
   <div class="settings-grid">
     <div class="card setting-section">
-      <h3>Appearance</h3>
+      <h3 data-en="Appearance" data-ar="المظهر"></h3>
       <div class="setting-row">
-        <div class="setting-label">THEME</div>
+        <div class="setting-label" data-en="THEME" data-ar="السمة"></div>
         <div class="toggle" id="themeToggle">
-          <button class="btn active" data-value="dark" onclick="setTheme('dark')">DARK</button>
-          <button class="btn" data-value="light" onclick="setTheme('light')">LIGHT</button>
+          <button class="btn active" data-value="dark" onclick="setTheme('dark')" data-en="DARK" data-ar="داكن"></button>
+          <button class="btn" data-value="light" onclick="setTheme('light')" data-en="LIGHT" data-ar="فاتح"></button>
         </div>
       </div>
       <div class="setting-row">
-        <div class="setting-label">PASTEL ACCENT</div>
+        <div class="setting-label" data-en="ACCENT" data-ar="اللون المميّز"></div>
         <div class="palette-options">
-          <button class="palette p-blue active" title="Blue" onclick="setPalette('blue')"></button>
-          <button class="palette p-lav" title="Lavender" onclick="setPalette('lavender')"></button>
-          <button class="palette p-pink" title="Pink" onclick="setPalette('pink')"></button>
-          <button class="palette p-gray" title="Soft Gray" onclick="setPalette('gray')"></button>
+          <button class="palette p-blue active" title="Blue" onclick="setPalette('blue')" aria-label="Blue"></button>
+          <button class="palette p-lav" title="Lavender" onclick="setPalette('lavender')" aria-label="Lavender"></button>
+          <button class="palette p-pink" title="Pink" onclick="setPalette('pink')" aria-label="Pink"></button>
+          <button class="palette p-gray" title="Gray" onclick="setPalette('gray')" aria-label="Gray"></button>
         </div>
       </div>
     </div>
     <div class="card setting-section">
-      <h3>Language</h3>
+      <h3 data-en="Language" data-ar="اللغة"></h3>
       <div class="setting-row">
-        <div class="setting-label">INTERFACE LANGUAGE</div>
+        <div class="setting-label" data-en="INTERFACE LANGUAGE" data-ar="لغة الواجهة"></div>
         <div class="toggle" id="langToggle">
           <button class="btn active" data-value="en" onclick="setLanguage('en')">ENGLISH</button>
           <button class="btn" data-value="ar" onclick="setLanguage('ar')">العربية</button>
         </div>
       </div>
       <div class="setting-row">
-        <div class="setting-label">SYSTEM INFORMATION</div>
+        <div class="setting-label" data-en="PROJECT INFORMATION" data-ar="معلومات المشروع"></div>
         <div class="detail-grid">
-          <div class="detail-row"><span>Project</span><span>CodeShield AI</span></div>
-          <div class="detail-row"><span>Type</span><span>AI Code Security Platform</span></div>
-          <div class="detail-row"><span>Response</span><span>Autonomous Remediation Simulation</span></div>
+          <div class="detail-row"><span data-en="Project" data-ar="المشروع"></span><span class="ltr">CodeShield AI</span></div>
+          <div class="detail-row"><span data-en="Stage" data-ar="المرحلة"></span><span data-en="Working prototype v0.1" data-ar="نموذج أولي عامل v0.1"></span></div>
+          <div class="detail-row"><span data-en="Engine" data-ar="المحرك"></span><span data-en="Rule-based, client-side" data-ar="قائم على القواعد، في المتصفح"></span></div>
+          <div class="detail-row"><span data-en="Author" data-ar="المُعِدّة"></span><span data-en="Lamis Alanazi" data-ar="لميس العنزي"></span></div>
+          <div class="detail-row"><span data-en="Program" data-ar="البرنامج"></span><span class="ltr">Tuwaiq Academy × SAIF</span></div>
         </div>
       </div>
     </div>
   </div>
 </div></section>
 
-<!-- LIVE DEMO -->
-<div class="demo-overlay" id="demoOverlay">
+<!-- WALKTHROUGH OVERLAY -->
+<div class="demo-overlay" id="demoOverlay" role="dialog" aria-modal="true">
   <div class="demo-box">
-    <div class="demo-kicker">CODESHIELD AI · LIVE REMEDIATION SIMULATION</div>
-    <div class="demo-status" id="demoStatus">SYSTEM ONLINE</div>
-    <div class="demo-description" id="demoDescription">Initializing static analysis engine...</div>
+    <div class="demo-kicker" data-en="CODESHIELD · GUIDED WALKTHROUGH (SIMULATED)" data-ar="كودشيلد · جولة توضيحية (محاكاة)"></div>
+    <div class="demo-status" id="demoStatus"></div>
+    <div class="demo-description" id="demoDescription"></div>
     <div class="demo-progress"><span id="demoProgress"></span></div>
-    <div class="demo-actions"><button class="btn" onclick="closeDemo()">CLOSE</button></div>
+    <div class="demo-actions"><button class="btn" onclick="closeDemo()" data-en="CLOSE" data-ar="إغلاق"></button></div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-/* CodeShield AI — prototype engine */
+"use strict";
+/* ============================================================
+   CodeShield AI — engine + UI
+   ============================================================ */
 
-const files = [
-  { id:"auth/login.py", module:"Authentication Service",
-    vuln:{ type:"Weak Password Hashing", severity:"MEDIUM", risk:62,
+/* ---------- i18n ---------- */
+const state = {
+  language: "en", theme: "dark", palette: "blue",
+  found: 0, fixed: 0, tests: 0, mode: "autonomous", selected: null,
+  flagged: new Set(), logs: [], findings: [], scannedLines: 0
+};
+const T = (en, ar) => (state.language === "ar" ? ar : en);
+
+function applyI18n(root){
+  (root || document).querySelectorAll("[data-en]").forEach(el => {
+    const v = el.getAttribute(state.language === "ar" ? "data-ar" : "data-en");
+    if (v !== null) el.innerHTML = v;
+  });
+  document.querySelectorAll("[data-placeholder-en]").forEach(el => {
+    el.placeholder = el.getAttribute(state.language === "ar" ? "data-placeholder-ar" : "data-placeholder-en") || "";
+  });
+}
+
+function setLanguage(lang){
+  state.language = lang;
+  document.documentElement.lang = lang;
+  document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.getElementById("langBtn").textContent = lang === "ar" ? "EN" : "العربية";
+  const t = document.getElementById("langToggle");
+  if (t) t.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.value === lang));
+  applyI18n();
+  // re-render everything that is built from JS
+  renderThreatCatalog();
+  showStep(currentStep);
+  renderFindings();
+  renderLogs();
+  refreshDetail();
+  try { localStorage.setItem("cs-language", lang); } catch (e) {}
+  toast(lang === "ar" ? "تم تحويل الواجهة إلى العربية بالكامل." : "Interface switched to English.");
+}
+function toggleLanguage(){ setLanguage(state.language === "en" ? "ar" : "en"); }
+
+/* ---------- navigation ---------- */
+function go(screen){
+  document.querySelectorAll(".screen").forEach(el => el.classList.remove("active"));
+  const target = document.getElementById(screen);
+  if (target) target.classList.add("active");
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.screen === screen));
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+/* ============================================================
+   REAL RULE ENGINE  — deterministic, client-side, auditable
+   ============================================================ */
+const RESOLVED_FROM_ENV = /(getenv|environ|process\.env|dotenv|\$\{|\$\(|vault|secret_?manager|keyvault|ssm|<[A-Z_]+>|\bNone\b|\bnull\b|\bnil\b)/i;
+
+const RULES = [
+  {
+    id:"SQLI", cwe:"CWE-89", owasp:"A03:2021 — Injection", severity:"HIGH",
+    en:"SQL Injection", ar:"حقن SQL",
+    why_en:"The query is assembled by joining raw user input into a SQL string. An attacker who controls that input controls the query, and can read, modify or destroy the whole table.",
+    why_ar:"يُبنى الاستعلام بدمج مدخل المستخدم مباشرة داخل نص SQL. من يتحكّم بهذا المدخل يتحكّم بالاستعلام، فيستطيع قراءة الجدول كاملًا أو تعديله أو حذفه.",
+    fix_en:"Use a parameterized query. Pass values as bound parameters so the database never treats them as SQL syntax.",
+    fix_ar:"استخدم استعلامًا معلمنًا (parameterized). مرّر القيم كمعاملات مربوطة حتى لا تتعامل معها قاعدة البيانات كأوامر SQL.",
+    test:(l) => {
+      const sql = /["'`]/.test(l) && (
+        /\bSELECT\b[^"'`]*\bFROM\b/i.test(l) || /\bINSERT\s+INTO\b/i.test(l) ||
+        /\bUPDATE\b[^"'`]*\bSET\b/i.test(l) || /\bDELETE\s+FROM\b/i.test(l) ||
+        /\bWHERE\b[^"'`]*=/i.test(l)
+      );
+      if (!sql) return false;
+      return /["'`]\s*(\+|\.)\s*[\w$]/.test(l)
+        || /\bf["'][^"']*\b(SELECT|INSERT|UPDATE|DELETE)\b[^"']*\{/i.test(l)
+        || /["'`]\s*%\s*[\w(]/.test(l)
+        || /\$\{[^}]+\}/.test(l)
+        || /\$_(GET|POST|REQUEST)\[/.test(l);
+    }
+  },
+  {
+    id:"WEAKHASH", cwe:"CWE-327", owasp:"A02:2021 — Cryptographic Failures", severity:"MEDIUM",
+    en:"Weak Hashing Algorithm", ar:"خوارزمية تجزئة ضعيفة",
+    why_en:"MD5 and SHA-1 are broken for security use. They are fast to compute, which makes brute-forcing stored password hashes cheap, and practical collisions exist.",
+    why_ar:"خوارزميتا MD5 وSHA-1 مكسورتان أمنيًا. حسابهما سريع جدًا، ما يجعل تخمين كلمات المرور المخزَّنة رخيصًا، كما أن تصادماتهما العملية معروفة.",
+    fix_en:"For passwords use bcrypt, scrypt or Argon2 with a per-user salt. For integrity checks use SHA-256 or stronger.",
+    fix_ar:"لكلمات المرور استخدم bcrypt أو scrypt أو Argon2 مع ملح (salt) لكل مستخدم. وللتحقق من السلامة استخدم SHA-256 أو أقوى.",
+    test:(l) => /\b(hashlib\.)?(md5|sha1)\s*\(/i.test(l)
+      || /MessageDigest\.getInstance\s*\(\s*["'](MD5|SHA-?1)["']/i.test(l)
+      || /createHash\s*\(\s*["'](md5|sha1)["']/i.test(l)
+  },
+  {
+    id:"SECRET", cwe:"CWE-798", owasp:"A07:2021 — Identification & Authentication Failures", severity:"HIGH",
+    en:"Hardcoded Credentials", ar:"بيانات اعتماد مكتوبة في الكود",
+    why_en:"A live key or password written into source code is exposed to everyone with repository access, survives in git history forever, and leaks instantly if the repo is ever made public.",
+    why_ar:"المفتاح أو كلمة المرور المكتوبة داخل الشيفرة مكشوفة لكل من يملك صلاحية على المستودع، وتبقى في سجلّ git إلى الأبد، وتتسرّب فورًا إذا أصبح المستودع عامًا.",
+    fix_en:"Move the value to an environment variable or a secrets manager, and rotate the exposed credential immediately — it must be considered compromised.",
+    fix_ar:"انقل القيمة إلى متغيّر بيئة أو مدير أسرار، وغيّر بيانات الاعتماد المكشوفة فورًا — يجب اعتبارها مخترقة.",
+    test:(l) => /\b(sk_live_|sk_test_|ghp_|gho_|github_pat_)[A-Za-z0-9_]{6,}/.test(l)
+      || /\bAKIA[0-9A-Z]{16}\b/.test(l)
+      || /\bAIza[0-9A-Za-z\-_]{20,}/.test(l)
+      || /-----BEGIN (RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----/.test(l)
+      || (/\b(password|passwd|pwd|secret|api[_-]?key|apikey|auth[_-]?token|access[_-]?key)\b\s*[:=]\s*["'][^"']{6,}["']/i.test(l) && !RESOLVED_FROM_ENV.test(l))
+      || (/^\s*(DB_PASSWORD|DB_PASS|API_KEY|SECRET_KEY|AWS_SECRET_ACCESS_KEY|PRIVATE_KEY|AUTH_TOKEN)\s*=\s*\S{6,}/i.test(l) && !RESOLVED_FROM_ENV.test(l))
+  },
+  {
+    id:"CMDI", cwe:"CWE-78", owasp:"A03:2021 — Injection", severity:"HIGH",
+    en:"Command / Code Injection", ar:"حقن أوامر أو تنفيذ كود",
+    why_en:"User-controlled text reaches a shell or an evaluator. A single ';' or '&&' lets an attacker run arbitrary commands with the privileges of your process.",
+    why_ar:"نص يتحكّم به المستخدم يصل إلى الشِل أو إلى مُقيّم كود. حرف ';' أو '&&' واحد يكفي ليشغّل المهاجم أوامر عشوائية بصلاحيات عمليتك.",
+    fix_en:"Never build a shell string. Pass the command and its arguments as an array with shell disabled, and drop eval entirely.",
+    fix_ar:"لا تبنِ نص أمر للشِل أبدًا. مرّر الأمر ومعاملاته كمصفوفة مع تعطيل الشِل، واستغنِ عن eval كليًا.",
+    test:(l) => /\beval\s*[\(\s]/.test(l)
+      || /\bos\.system\s*\(/.test(l)
+      || /\bsubprocess\.(run|call|Popen|check_output)\s*\(.*shell\s*=\s*True/.test(l)
+      || /\bchild_process\.(exec|execSync)\s*\(/.test(l)
+      || /\b(shell_exec|passthru|proc_open|popen)\s*\(/.test(l)
+      || /\bsystem\s*\(\s*\$/.test(l)
+      || /\bnew\s+Function\s*\(/.test(l)
+      || /\.\s*(exec|execSync|spawn|spawnSync)\s*\(\s*["'`][^"'`]*["'`]\s*\+/.test(l)
+  },
+  {
+    id:"XSS", cwe:"CWE-79", owasp:"A03:2021 — Injection", severity:"HIGH",
+    en:"Cross-Site Scripting (XSS)", ar:"برمجة عابرة للمواقع (XSS)",
+    why_en:"Untrusted content is written into the page as HTML rather than as text, so any script inside it executes with the full privileges of your origin — including access to session cookies.",
+    why_ar:"يُكتب محتوى غير موثوق في الصفحة كـ HTML لا كنص، فينفَّذ أي سكربت بداخله بكامل صلاحيات نطاقك — بما في ذلك الوصول إلى كعكات الجلسة.",
+    fix_en:"Assign through textContent, or render as escaped text. If HTML is genuinely required, sanitize with a vetted library such as DOMPurify.",
+    fix_ar:"استخدم textContent للإسناد، أو اعرض المحتوى كنص مُهرَّب. وإن كان HTML ضروريًا فعلًا، فنقِّه بمكتبة موثوقة مثل DOMPurify.",
+    test:(l) => /dangerouslySetInnerHTML/.test(l)
+      || /\.innerHTML\s*(\+)?=/.test(l)
+      || /\bdocument\.write(ln)?\s*\(/.test(l)
+      || /\bv-html\s*=/.test(l)
+      || /\becho\s+\$_(GET|POST|REQUEST)/.test(l)
+      || /\.outerHTML\s*=/.test(l)
+  },
+  {
+    id:"DESERIAL", cwe:"CWE-502", owasp:"A08:2021 — Software & Data Integrity Failures", severity:"HIGH",
+    en:"Insecure Deserialization", ar:"فك تسلسل غير آمن",
+    why_en:"These functions rebuild arbitrary objects from a byte stream. A crafted payload can trigger code execution during deserialization itself — before any of your validation runs.",
+    why_ar:"تعيد هذه الدوال بناء كائنات عشوائية من تدفّق بايتات. حمولة مُصمَّمة بعناية قد تُنفّذ كودًا أثناء فك التسلسل نفسه — قبل أن يعمل أي تحقّق لديك.",
+    fix_en:"Use a data-only format such as JSON, or the library's safe loader (yaml.safe_load, JSON.parse), and validate the resulting shape against a schema.",
+    fix_ar:"استخدم صيغة بيانات فقط مثل JSON، أو المُحمِّل الآمن للمكتبة (yaml.safe_load أو JSON.parse)، ثم تحقّق من بنية الناتج مقابل مخطّط محدّد.",
+    test:(l) => /\bpickle\.loads?\s*\(/.test(l)
+      || /\bMarshal\.load\s*\(/.test(l)
+      || /\bunserialize\s*\(/.test(l)
+      || (/\byaml\.load\s*\(/.test(l) && !/SafeLoader|safe_load/.test(l))
+      || /\bcPickle\.loads?\s*\(/.test(l)
+  },
+  {
+    id:"TLSOFF", cwe:"CWE-295", owasp:"A02:2021 — Cryptographic Failures", severity:"HIGH",
+    en:"TLS Verification Disabled", ar:"تعطيل التحقق من شهادة TLS",
+    why_en:"With certificate verification switched off, the connection is still encrypted but no longer authenticated. Anyone positioned on the network can present their own certificate and read or alter the traffic.",
+    why_ar:"مع تعطيل التحقق من الشهادة يبقى الاتصال مشفّرًا لكنه غير موثّق. أي طرف على المسار الشبكي يستطيع تقديم شهادته الخاصة وقراءة البيانات أو تعديلها.",
+    fix_en:"Re-enable verification. If the target uses an internal certificate authority, add that CA to the trust store instead of disabling the check.",
+    fix_ar:"أعد تفعيل التحقق. وإذا كان الطرف المقابل يستخدم سلطة شهادات داخلية، فأضف تلك السلطة إلى مخزن الثقة بدل تعطيل التحقق.",
+    test:(l) => /\bverify\s*=\s*False\b/.test(l)
+      || /rejectUnauthorized\s*:\s*false/i.test(l)
+      || /InsecureSkipVerify\s*:\s*true/i.test(l)
+      || /NODE_TLS_REJECT_UNAUTHORIZED\s*=\s*["']?0/.test(l)
+      || /CURLOPT_SSL_VERIFY(PEER|HOST)\s*,\s*(false|0)\b/i.test(l)
+  },
+  {
+    id:"WEAKRAND", cwe:"CWE-338", owasp:"A02:2021 — Cryptographic Failures", severity:"MEDIUM",
+    en:"Weak Randomness for a Security Value", ar:"عشوائية ضعيفة لقيمة أمنية",
+    why_en:"General-purpose random generators are predictable. Given a few outputs, an attacker can recover the internal state and compute every future token — including password-reset links.",
+    why_ar:"مولّدات العشوائية العامة قابلة للتنبؤ. من عدد قليل من المخرجات يستطيع المهاجم استرجاع الحالة الداخلية وحساب كل رمز لاحق — بما في ذلك روابط إعادة تعيين كلمة المرور.",
+    fix_en:"Use a cryptographically secure source: secrets.token_urlsafe in Python, crypto.randomBytes in Node, or crypto.getRandomValues in the browser.",
+    fix_ar:"استخدم مصدرًا عشوائيًا آمنًا تشفيريًا: secrets.token_urlsafe في بايثون، أو crypto.randomBytes في نود، أو crypto.getRandomValues في المتصفح.",
+    test:(l) => /\b(token|password|secret|otp|nonce|session|salt|key|reset)\w*\s*[:=][^;\n]*\bMath\.random\s*\(/i.test(l)
+      || /\b(token|password|secret|otp|nonce|session|salt|key|reset)\w*\s*[:=][^;\n]*\brandom\.(random|randint|choice|randrange)\s*\(/i.test(l)
+  },
+  {
+    id:"UPLOAD", cwe:"CWE-434", owasp:"A04:2021 — Insecure Design", severity:"MEDIUM",
+    en:"Unrestricted File Upload", ar:"رفع ملفات بدون قيود",
+    why_en:"The uploaded file is stored under a name the user controls, with no extension check. Uploading a .php or .jsp file into a web-served directory turns the upload form into remote code execution.",
+    why_ar:"يُخزَّن الملف المرفوع باسم يتحكّم به المستخدم دون التحقق من امتداده. رفع ملف ‎.php‎ أو ‎.jsp‎ إلى مجلد يخدمه الخادم يحوّل نموذج الرفع إلى تنفيذ كود عن بُعد.",
+    fix_en:"Whitelist allowed extensions, generate the stored filename yourself, and keep the upload directory outside the web root with execution disabled.",
+    fix_ar:"حدّد قائمة امتدادات مسموحة، وولّد اسم الملف المخزَّن بنفسك، واحفظ مجلد الرفع خارج جذر الويب مع تعطيل التنفيذ فيه.",
+    test:(l) => (/\bmove_uploaded_file\s*\(/.test(l) && !/in_array|pathinfo|allowed|whitelist/i.test(l))
+      || (/\$_FILES\[[^\]]*\]\[["']name["']\]/.test(l) && /(move_uploaded_file|fopen|file_put_contents)/.test(l))
+  }
+];
+
+const COMMENT_LINE = /^\s*(\/\/|#|\*|--|<!--|\/\*)/;
+
+function detectLanguage(code){
+  const hint = document.getElementById("langHint").value;
+  if (hint !== "auto") return hint;
+  if (/<\?php|\$_(GET|POST|SERVER)|->/.test(code)) return "php";
+  if (/\bdef\s+\w+\s*\(.*\)\s*:|\bimport\s+\w+$|\bself\b/m.test(code)) return "python";
+  if (/\bfunction\b|\bconst\b|=>|\brequire\(|\bexport\b/.test(code)) return "javascript";
+  if (/\bend\b|\bdo\s*\|/.test(code)) return "ruby";
+  if (/^#!\/bin\/(ba)?sh|\bfi\b|\besac\b/m.test(code)) return "shell";
+  return "javascript";
+}
+
+/* --- verification test generator: the differentiator --- */
+function generateTest(ruleId, line, lang){
+  const P = lang === "python", R = lang === "ruby", H = lang === "php";
+  const tests = {
+    SQLI: P
+      ? `def test_sql_injection_blocked_line_${line}():\n    """FAILS on the vulnerable version, PASSES after the fix."""\n    payload = "1 OR 1=1; DROP TABLE users;--"\n    sql, params = build_query(payload)      # <- rename to your function\n    assert payload not in sql               # input must not be inlined\n    assert params == (payload,)             # it must be a bound parameter`
+      : `test("SQL injection payload is never inlined (line ${line})", () => {\n  // FAILS on the vulnerable version, PASSES after the fix.\n  const payload = "1 OR 1=1; DROP TABLE users;--";\n  const { sql, params } = buildQuery(payload);   // <- rename to your function\n  expect(sql).not.toContain(payload);\n  expect(params).toContain(payload);\n});`,
+    WEAKHASH: P
+      ? `def test_password_hash_is_strong_line_${line}():\n    import re\n    h = hash_password("correct horse battery staple")\n    assert not re.fullmatch(r"[0-9a-f]{32}", h)   # 32 hex chars == MD5\n    assert h.startswith(("$2b$", "$argon2", "$scrypt"))`
+      : `test("password hash is not MD5/SHA-1 (line ${line})", () => {\n  const h = hashPassword("correct horse battery staple");\n  expect(h).not.toMatch(/^[0-9a-f]{32}$/);   // MD5\n  expect(h).not.toMatch(/^[0-9a-f]{40}$/);   // SHA-1\n  expect(h.length).toBeGreaterThanOrEqual(60);\n});`,
+    SECRET: P
+      ? `def test_no_hardcoded_secrets_line_${line}():\n    import os, pathlib\n    src = pathlib.Path(__file__).read_text()\n    for marker in ("sk_live_", "AKIA", "-----BEGIN"):\n        assert marker not in src\n    assert os.environ.get("API_KEY")    # must come from the environment`
+      : `test("no hardcoded secrets in source (line ${line})", () => {\n  const src = require("fs").readFileSync(__filename, "utf8");\n  for (const m of ["sk_live_", "AKIA", "-----BEGIN"]) expect(src).not.toContain(m);\n  expect(process.env.API_KEY).toBeTruthy();\n});`,
+    CMDI: P
+      ? `def test_command_injection_blocked_line_${line}():\n    import pytest\n    with pytest.raises(Exception):\n        deploy("main; rm -rf /")        # <- rename to your function\n    assert deploy("main") is not None   # legitimate input still works`
+      : `test("shell metacharacters are rejected (line ${line})", () => {\n  expect(() => deploy("main; rm -rf /")).toThrow();\n  expect(deploy("main")).toBeDefined();   // legitimate input still works\n});`,
+    XSS: P
+      ? `def test_markup_is_escaped_line_${line}():\n    out = render('<img src=x onerror=alert(1)>')\n    assert "onerror" not in out\n    assert "&lt;img" in out`
+      : `test("markup in user input is escaped (line ${line})", () => {\n  const out = render('<img src=x onerror=alert(1)>');\n  expect(out).not.toContain("onerror");\n  expect(out).toContain("&lt;img");\n});`,
+    DESERIAL: P
+      ? `def test_untrusted_payload_rejected_line_${line}():\n    import pytest\n    rce = b"cos\\nsystem\\n(S'id'\\ntR."     # classic pickle RCE payload\n    with pytest.raises(Exception):\n        load_data(rce)                     # <- rename to your function`
+      : `test("untrusted payload cannot pollute the prototype (line ${line})", () => {\n  loadData('{"__proto__":{"polluted":true}}');   // <- rename to your function\n  expect({}.polluted).toBeUndefined();\n});`,
+    TLSOFF: P
+      ? `def test_tls_verification_enabled_line_${line}():\n    import inspect, mymodule           # <- your module\n    src = inspect.getsource(mymodule)\n    assert "verify=False" not in src`
+      : `test("TLS certificate verification stays on (line ${line})", () => {\n  const src = require("fs").readFileSync(__filename, "utf8");\n  expect(src).not.toMatch(/rejectUnauthorized\\s*:\\s*false/);\n});`,
+    WEAKRAND: P
+      ? `def test_token_is_cryptographically_random_line_${line}():\n    tokens = {make_token() for _ in range(5000)}   # <- rename to your function\n    assert len(tokens) == 5000        # no collisions across 5000 draws\n    assert len(next(iter(tokens))) >= 32`
+      : `test("token is cryptographically random (line ${line})", () => {\n  const seen = new Set(Array.from({ length: 5000 }, () => makeToken()));\n  expect(seen.size).toBe(5000);          // no collisions\n  expect([...seen][0].length).toBeGreaterThanOrEqual(32);\n});`,
+    UPLOAD: H
+      ? `public function test_rejects_executable_upload_line_${line}() {\n    $this->assertFalse(handle_upload("shell.php"));\n    $this->assertFalse(handle_upload("shell.phtml"));\n    $this->assertTrue(handle_upload("photo.jpg"));\n}`
+      : `test("executable uploads are rejected (line ${line})", () => {\n  expect(handleUpload("shell.php")).toBe(false);\n  expect(handleUpload("photo.jpg")).toBe(true);\n});`
+  };
+  if (R && tests[ruleId]) {
+    return `it "closes ${ruleId} reported on line ${line}" do\n  # FAILS on the vulnerable version, PASSES after the fix.\n  expect { vulnerable_call("'; DROP TABLE users;--") }.to raise_error\nend`;
+  }
+  return tests[ruleId] || `// verification test for ${ruleId} (line ${line})`;
+}
+
+function scanCode(code){
+  const lang = detectLanguage(code);
+  const lines = code.split(/\r?\n/);
+  const findings = [];
+  lines.forEach((raw, i) => {
+    const line = raw;
+    if (!line.trim() || COMMENT_LINE.test(line)) return;
+    for (const r of RULES){
+      let hit = false;
+      try { hit = r.test(line); } catch (e) { hit = false; }
+      if (hit){
+        findings.push({
+          ruleId:r.id, cwe:r.cwe, owasp:r.owasp, severity:r.severity,
+          name_en:r.en, name_ar:r.ar, why_en:r.why_en, why_ar:r.why_ar,
+          fix_en:r.fix_en, fix_ar:r.fix_ar,
+          line:i + 1, snippet:line.trim().slice(0, 240),
+          proof:generateTest(r.id, i + 1, lang)
+        });
+      }
+    }
+  });
+  return { findings, lineCount:lines.length, lang };
+}
+
+function escapeHtml(s){
+  const d = document.createElement("div");
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function runRealScan(){
+  const code = document.getElementById("codeInput").value;
+  if (!code.trim()){
+    toast(T("Paste some code first.", "الصق كودًا أولًا."));
+    return;
+  }
+  const res = scanCode(code);
+  state.findings = res.findings;
+  state.scannedLines = res.lineCount;
+  renderFindings();
+  const high = res.findings.filter(f => f.severity === "HIGH").length;
+  toast(res.findings.length === 0
+    ? T("No issues matched the active rules.", "لم تطابق أي ثغرة القواعد الفعّالة.")
+    : T(`${res.findings.length} finding(s) — ${high} high severity.`, `${res.findings.length} نتيجة — منها ${high} عالية الخطورة.`));
+}
+
+function renderFindings(){
+  const box = document.getElementById("findings");
+  document.getElementById("sumLines").textContent = state.scannedLines;
+  document.getElementById("sumHigh").textContent = state.findings.filter(f => f.severity === "HIGH").length;
+  document.getElementById("sumMed").textContent = state.findings.filter(f => f.severity === "MEDIUM").length;
+
+  if (!state.findings.length){
+    box.innerHTML = `<div class="empty-state"><div class="big">${state.scannedLines ? "✓" : "⌘"}</div>${
+      state.scannedLines
+        ? T("No vulnerability matched the 9 active rules in this snippet.<br>Remember: the engine works line by line and does not follow data flow across statements.",
+            "لم تطابق أي ثغرة القواعد التسع الفعّالة في هذا المقطع.<br>تذكّر: يعمل المحرك سطرًا بسطر ولا يتتبّع تدفّق البيانات عبر الجُمل البرمجية.")
+        : T("Paste code on the left, or load the sample, then press Scan Code.",
+            "الصق كودًا على اليمين، أو حمّل المثال الجاهز، ثم اضغط «افحص الكود».")
+    }</div>`;
+    return;
+  }
+
+  const order = { HIGH:0, MEDIUM:1, LOW:2 };
+  const sorted = [...state.findings].sort((a, b) => order[a.severity] - order[b.severity] || a.line - b.line);
+
+  box.innerHTML = sorted.map((f, i) => `
+    <div class="finding${i === 0 ? " open" : ""}">
+      <div class="finding-head" onclick="this.parentElement.classList.toggle('open')" role="button" tabindex="0">
+        <div class="finding-title">${escapeHtml(T(f.name_en, f.name_ar))}</div>
+        <div class="finding-meta">
+          <span class="chip ${f.severity.toLowerCase()}">${T(f.severity, f.severity === "HIGH" ? "عالية" : "متوسطة")}</span>
+          <span class="chip meta ltr">${f.cwe}</span>
+          <span class="chip line">${T("line", "سطر")} ${f.line}</span>
+        </div>
+      </div>
+      <div class="finding-body">
+        <div class="code-label">${T("VULNERABLE LINE", "السطر المصاب")}</div>
+        <div class="finding-code">${escapeHtml(f.snippet)}</div>
+        <p class="why">${escapeHtml(T(f.why_en, f.why_ar))}</p>
+        <div class="fix-box">
+          <div class="ai-label">${T("SUGGESTED FIX", "الإصلاح المقترح")}</div>
+          <p>${escapeHtml(T(f.fix_en, f.fix_ar))}</p>
+        </div>
+        <div class="proof-box">
+          <div class="ai-label">${T("GENERATED PROOF TEST", "اختبار الإثبات المُولَّد")}</div>
+          <p style="margin-bottom:9px">${T("Fails on the vulnerable version, passes after the fix. Rename the function under test to match your code.", "يفشل على النسخة المصابة وينجح بعد الإصلاح. غيّر اسم الدالة المُختبَرة لتطابق كودك.")}</p>
+          <div class="code-block test">${escapeHtml(f.proof)}</div>
+        </div>
+        <div style="margin-top:10px;font-size:11.5px;color:var(--muted)">${escapeHtml(f.owasp)}</div>
+      </div>
+    </div>`).join("");
+}
+
+function downloadReport(){
+  if (!state.findings.length){ toast(T("Nothing to export yet.", "لا توجد نتائج للتصدير بعد.")); return; }
+  const report = {
+    tool:"CodeShield AI", engine:"rule-based v0.1",
+    generated_at:new Date().toISOString(),
+    lines_scanned:state.scannedLines,
+    summary:{
+      total:state.findings.length,
+      high:state.findings.filter(f => f.severity === "HIGH").length,
+      medium:state.findings.filter(f => f.severity === "MEDIUM").length
+    },
+    findings:state.findings.map(f => ({
+      rule:f.ruleId, cwe:f.cwe, owasp:f.owasp, severity:f.severity,
+      line:f.line, snippet:f.snippet,
+      explanation:f.why_en, suggested_fix:f.fix_en, verification_test:f.proof
+    }))
+  };
+  const blob = new Blob([JSON.stringify(report, null, 2)], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "codeshield-report.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast(T("Report exported.", "تم تصدير التقرير."));
+}
+
+const SAMPLE = `import hashlib, pickle, os, subprocess, requests, random
+
+API_KEY = "sk_live_51H8xQbLmNpQrStUvWxYz"
+DB_PASSWORD = "admin123"
+
+def get_user(user_id):
+    query = "SELECT * FROM users WHERE id=" + user_id
+    return cursor.execute(query)
+
+def hash_password(p):
+    return hashlib.md5(p.encode()).hexdigest()
+
+def load_session(data):
+    return pickle.loads(data)
+
+def deploy(branch):
+    os.system("git checkout " + branch)
+    subprocess.run("build " + branch, shell=True)
+
+def fetch(url):
+    return requests.get(url, verify=False)
+
+reset_token = random.randint(100000, 999999)
+`;
+
+function loadSample(){
+  document.getElementById("codeInput").value = SAMPLE;
+  document.getElementById("langHint").value = "python";
+  runRealScan();
+}
+function clearScanner(){
+  document.getElementById("codeInput").value = "";
+  state.findings = []; state.scannedLines = 0;
+  renderFindings();
+}
+
+/* ---------- vulnerability catalog (built from the same RULES) ---------- */
+function renderThreatCatalog(){
+  const list = document.getElementById("threatList");
+  list.innerHTML = RULES.map((r, i) => `
+    <button class="threat-card" onclick="selectThreat(${i}, this)">
+      <div class="threat-top">
+        <div class="threat-name">${escapeHtml(T(r.en, r.ar))}</div>
+        <div class="chip ${r.severity.toLowerCase()}">${T(r.severity, r.severity === "HIGH" ? "عالية" : "متوسطة")}</div>
+      </div>
+      <p><span class="ltr">${r.cwe}</span> · ${escapeHtml(r.owasp)}</p>
+    </button>`).join("");
+  selectThreat(selectedThreat, null, true);
+}
+let selectedThreat = 0;
+function selectThreat(i, el, silent){
+  selectedThreat = i;
+  const r = RULES[i];
+  document.querySelectorAll(".threat-card").forEach((c, j) => {
+    c.style.borderColor = j === i ? "var(--accent)" : "";
+    c.style.background = j === i ? "var(--accent-dim)" : "";
+  });
+  document.getElementById("threatDetail").innerHTML = `
+    <h3 style="font-size:20px;margin-bottom:8px">${escapeHtml(T(r.en, r.ar))}</h3>
+    <div style="margin-bottom:16px"><span class="chip meta ltr">${r.cwe}</span> <span class="chip ${r.severity.toLowerCase()}">${T(r.severity, r.severity === "HIGH" ? "عالية" : "متوسطة")}</span></div>
+    <p class="why">${escapeHtml(T(r.why_en, r.why_ar))}</p>
+    <div class="fix-box">
+      <div class="ai-label">${T("HOW CODESHIELD FIXES IT", "كيف يعالجها كودشيلد")}</div>
+      <p>${escapeHtml(T(r.fix_en, r.fix_ar))}</p>
+    </div>
+    <div style="margin-top:14px;font-size:12px;color:var(--muted)">${escapeHtml(r.owasp)}</div>`;
+  if (!silent) toast(T(r.en, r.ar));
+}
+
+/* ---------- HOW IT WORKS steps ---------- */
+let currentStep = 0;
+const stepData = [
+  { en_t:"SCAN · Read the source", ar_t:"فحص · قراءة الشيفرة",
+    en:"Every non-comment line of the submitted code is read in the browser. Comment lines are skipped so that documentation examples are not reported as real findings.",
+    ar:"يُقرأ كل سطر غير تعليقي من الشيفرة المُدخَلة داخل المتصفح. تُتجاهَل أسطر التعليقات حتى لا تُبلَّغ أمثلة التوثيق كنتائج حقيقية." },
+  { en_t:"DETECT · Match known patterns", ar_t:"اكتشاف · مطابقة الأنماط المعروفة",
+    en:"Nine rules run against each line. A rule fires only when the structural signature of the vulnerability is present — a SQL keyword alone is not enough, the query must also be concatenated with a variable.",
+    ar:"تُشغَّل تسع قواعد على كل سطر. لا تُطلَق القاعدة إلا بوجود البصمة البنيوية للثغرة — فكلمة SQL وحدها لا تكفي، بل يجب أن يكون الاستعلام مدموجًا بمتغيّر أيضًا." },
+  { en_t:"ANALYZE · Classify", ar_t:"تحليل · التصنيف",
+    en:"Each finding is tagged with its CWE identifier, its OWASP Top 10 (2021) category, and a severity level, so it can be triaged inside an existing security workflow.",
+    ar:"تُوسَم كل نتيجة بمعرّف CWE وتصنيف OWASP العشرة (٢٠٢١) ودرجة خطورة، لتُدرَج ضمن سير عمل أمني قائم." },
+  { en_t:"FIX · Propose a patch", ar_t:"إصلاح · اقتراح المعالجة",
+    en:"A concrete remediation is proposed for the specific pattern found — parameterized queries for injection, bcrypt for weak hashing, a secrets manager for exposed credentials.",
+    ar:"يُقترح إصلاح ملموس للنمط المكتشَف تحديدًا — استعلام معلمن للحقن، وbcrypt للتجزئة الضعيفة، ومدير أسرار لبيانات الاعتماد المكشوفة." },
+  { en_t:"PROVE · Generate the test", ar_t:"إثبات · توليد الاختبار",
+    en:"This is the stage other scanners skip. CodeShield writes a regression test designed to fail on the vulnerable code and pass once the fix is applied — so the fix is verifiable, and the vulnerability cannot silently return later.",
+    ar:"هذه هي المرحلة التي تتخطّاها الفواحص الأخرى. يكتب كودشيلد اختبار انحدار مصمَّمًا ليفشل على الكود المصاب وينجح بعد تطبيق الإصلاح — فيصبح الإصلاح قابلًا للتحقق، ولا تستطيع الثغرة العودة بصمت لاحقًا." }
+];
+function showStep(index){
+  currentStep = index;
+  document.querySelectorAll(".step").forEach((s, i) => s.classList.toggle("active", i === index));
+  const d = stepData[index];
+  document.getElementById("stepDetail").innerHTML =
+    `<div><div class="eyebrow">${T("STEP", "المرحلة")} ${String(index + 1).padStart(2, "0")}</div>
+     <h3>${T(d.en_t, d.ar_t)}</h3><p>${T(d.en, d.ar)}</p></div>`;
+}
+
+/* ============================================================
+   SIMULATION (clearly labelled illustrative mock-up)
+   ============================================================ */
+const sampleFiles = [
+  { id:"db/queries.py", role_en:"Database query layer", role_ar:"طبقة استعلامات قاعدة البيانات", cls:"d2",
+    v:{ type_en:"SQL Injection", type_ar:"حقن SQL", sev:"HIGH",
+      before:'query = "SELECT * FROM users WHERE id=" + user_id\ncursor.execute(query)',
+      after:'query = "SELECT * FROM users WHERE id = %s"\ncursor.execute(query, (user_id,))',
+      test:'def test_query_rejects_sql_injection():\n    assert get_user("1; DROP TABLE users;--") is None',
+      why_en:"User input is concatenated straight into the SQL string, so an attacker controls the query.",
+      why_ar:"يُدمج مدخل المستخدم مباشرة في نص SQL، فيتحكّم المهاجم بالاستعلام." } },
+  { id:"auth/login.py", role_en:"Authentication service", role_ar:"خدمة المصادقة", cls:"d1",
+    v:{ type_en:"Weak Password Hashing", type_ar:"تجزئة كلمة مرور ضعيفة", sev:"MEDIUM",
       before:'password_hash = md5(password)',
       after:'password_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())',
       test:'def test_password_uses_bcrypt():\n    assert password_hash.startswith("$2b$")',
-      reason:"دالة تجزئة كلمة المرور تستخدم خوارزمية MD5 الضعيفة القابلة للكسر بسهولة. تم اقتراح الانتقال إلى bcrypt مع salt عشوائي." } },
-  { id:"db/queries.py", module:"Database Query Layer",
-    vuln:{ type:"SQL Injection", severity:"HIGH", risk:96,
-      before:'query = "SELECT * FROM users WHERE id=" + user_id\ncursor.execute(query)',
-      after:'query = "SELECT * FROM users WHERE id = %s"\ncursor.execute(query, (user_id,))',
-      test:'def test_query_rejects_sql_injection():\n    result = get_user("1; DROP TABLE users;--")\n    assert result is None',
-      reason:"الاستعلام يُبنى بدمج نصي مباشر لمدخل المستخدم، ما يسمح بحقن أوامر SQL. تم توليد نسخة معلمنة (parameterized) من الاستعلام." } },
-  { id:"api/payments.js", module:"Payment Gateway API",
-    vuln:{ type:"Improper Input Validation", severity:"MEDIUM", risk:58,
+      why_en:"MD5 is fast and broken, which makes stored password hashes cheap to brute-force.",
+      why_ar:"خوارزمية MD5 سريعة ومكسورة، ما يجعل تخمين كلمات المرور المخزَّنة رخيصًا." } },
+  { id:"api/payments.js", role_en:"Payment gateway API", role_ar:"واجهة بوابة الدفع", cls:"d3",
+    v:{ type_en:"Improper Input Validation", type_ar:"تحقّق غير كافٍ من المدخلات", sev:"MEDIUM",
       before:'app.post("/charge",(req,res)=>{ chargeCard(req.body.amount) })',
-      after:'app.post("/charge",(req,res)=>{ const amount = validateAmount(req.body.amount); chargeCard(amount) })',
+      after:'app.post("/charge",(req,res)=>{ chargeCard(validateAmount(req.body.amount)) })',
       test:'test("rejects negative charge amounts", () => {\n  expect(() => chargeCard(-50)).toThrow();\n});',
-      reason:"قيمة الدفع تُستخدم مباشرة دون تحقق من صحتها، ما يسمح بتمرير قيم سالبة أو غير منطقية. أُضيف تحقق صارم قبل التنفيذ." } },
-  { id:"web/search.jsx", module:"Search Component",
-    vuln:{ type:"Cross-Site Scripting (XSS)", severity:"MEDIUM", risk:71,
+      why_en:"The charge amount is used without validation, so negative or absurd values pass through.",
+      why_ar:"تُستخدم قيمة الدفع دون تحقق، فتمرّ القيم السالبة أو غير المنطقية." } },
+  { id:"web/search.jsx", role_en:"Search component", role_ar:"مكوّن البحث", cls:"d4",
+    v:{ type_en:"Cross-Site Scripting (XSS)", type_ar:"برمجة عابرة للمواقع (XSS)", sev:"HIGH",
       before:'<div dangerouslySetInnerHTML={{__html: query}} />',
       after:'<div>{sanitize(query)}</div>',
       test:'test("escapes markup in search query", () => {\n  expect(render("<img onerror=alert(1)>")).not.toContain("onerror");\n});',
-      reason:"محتوى البحث يُحقن مباشرة في الصفحة دون تنقية، ما يفتح الباب أمام XSS. استُبدل بعرض نص آمن بعد التنقية." } },
-  { id:"services/upload.php", module:"File Upload Service",
-    vuln:{ type:"Insecure File Upload", severity:"HIGH", risk:88,
+      why_en:"Search text is injected as HTML, so any script inside it runs in the user's session.",
+      why_ar:"يُحقَن نص البحث كـ HTML، فينفَّذ أي سكربت بداخله ضمن جلسة المستخدم." } },
+  { id:"services/upload.php", role_en:"File upload service", role_ar:"خدمة رفع الملفات", cls:"d5",
+    v:{ type_en:"Unrestricted File Upload", type_ar:"رفع ملفات بدون قيود", sev:"HIGH",
       before:'move_uploaded_file($_FILES["file"]["tmp_name"], "/uploads/".$_FILES["file"]["name"]);',
       after:'if(in_array($ext,$allowed)){ move_uploaded_file($tmp, "/uploads/".uniqid().".".$ext); }',
       test:'function test_rejects_executable_upload() {\n    assertFalse(upload("shell.php"));\n}',
-      reason:"الخدمة تقبل أي ملف مرفوع بدون التحقق من امتداده، ما يسمح برفع ملفات تنفيذية ضارة. أُضيف تحقق من الامتداد وإعادة تسمية الملف." } },
-  { id:"config/settings.env", module:"Environment Configuration",
-    vuln:{ type:"Hardcoded Credentials", severity:"HIGH", risk:93,
+      why_en:"Any file type is accepted under a user-controlled name, allowing a web shell to be uploaded.",
+      why_ar:"يُقبل أي نوع ملف باسم يتحكّم به المستخدم، ما يسمح برفع ملف تنفيذي ضار." } },
+  { id:"config/settings.env", role_en:"Environment configuration", role_ar:"إعدادات البيئة", cls:"d6",
+    v:{ type_en:"Hardcoded Credentials", type_ar:"بيانات اعتماد مكشوفة", sev:"HIGH",
       before:'API_KEY=sk_live_51H8x...\nDB_PASSWORD=admin123',
       after:'API_KEY=${SECRET_MANAGER.API_KEY}\nDB_PASSWORD=${SECRET_MANAGER.DB_PASSWORD}',
       test:'def test_no_hardcoded_secrets_in_env():\n    assert "sk_live" not in open(".env").read()',
-      reason:"بيانات اعتماد حساسة مكتوبة مباشرة في ملف الإعدادات. اقتُرح نقلها إلى مدير أسرار (secrets manager)." } },
-  { id:"scripts/deploy.sh", module:"Deployment Script",
-    vuln:{ type:"Command Injection", severity:"HIGH", risk:90,
+      why_en:"Live credentials sit in a tracked config file and persist in git history forever.",
+      why_ar:"بيانات اعتماد حيّة في ملف إعدادات متتبَّع، وتبقى في سجلّ git إلى الأبد." } },
+  { id:"scripts/deploy.sh", role_en:"Deployment script", role_ar:"سكربت النشر", cls:"d7",
+    v:{ type_en:"Command Injection", type_ar:"حقن أوامر", sev:"HIGH",
       before:'eval "deploy $BRANCH_NAME"',
       after:'deploy "$(printf %q "$BRANCH_NAME")"',
-      test:'test_deploy_rejects_shell_metacharacters() {\n  run deploy "; rm -rf /"\n  [ "$status" -ne 0 ]\n}',
-      reason:"اسم الفرع يُمرر مباشرة إلى eval دون تنقية، ما يسمح بتنفيذ أوامر نظام عشوائية. استُبدل بتمرير آمن للمعامل." } },
-  { id:"mail/notify.rb", module:"Notification Service",
-    vuln:{ type:"Insecure Deserialization", severity:"LOW", risk:41,
+      test:'test_deploy_rejects_metacharacters() {\n  run deploy "; rm -rf /"\n  [ "$status" -ne 0 ]\n}',
+      why_en:"The branch name reaches eval unsanitised, allowing arbitrary shell commands.",
+      why_ar:"يصل اسم الفرع إلى eval دون تنقية، ما يسمح بتنفيذ أوامر شِل عشوائية." } },
+  { id:"mail/notify.rb", role_en:"Notification service", role_ar:"خدمة الإشعارات", cls:"d8",
+    v:{ type_en:"Insecure Deserialization", type_ar:"فك تسلسل غير آمن", sev:"MEDIUM",
       before:'obj = Marshal.load(params[:data])',
       after:'obj = JSON.parse(params[:data])',
       test:'it "rejects unsafe marshal payloads" do\n  expect { notify(marshal_payload) }.to raise_error\nend',
-      reason:"البيانات القادمة من المستخدم تُفكّك عبر Marshal.load غير الآمن، ما يسمح بتنفيذ كود عشوائي. استُبدل بـ JSON.parse الآمن." } }
+      why_en:"Marshal.load rebuilds arbitrary objects from user data, which can execute code.",
+      why_ar:"تعيد Marshal.load بناء كائنات عشوائية من بيانات المستخدم، ما قد ينفّذ كودًا." } }
 ];
 
-const state = {
-  found:0, fixed:0, tests:0, fixTimes:[],
-  mode:"autonomous", selected:null,
-  language:"en", theme:"dark", palette:"blue",
-  flaggedFiles:new Set(), logs:[]
-};
-
-function go(screen){
-  document.querySelectorAll(".screen").forEach(el=>el.classList.remove("active"));
-  const target = document.getElementById(screen);
-  if(target) target.classList.add("active");
-  document.querySelectorAll(".nav-btn").forEach(btn=>{
-    btn.classList.toggle("active", btn.dataset.screen === screen);
+function renderDevices(){
+  document.getElementById("deviceLayer").innerHTML = sampleFiles.map(f => `
+    <button class="device ${f.cls}" data-id="${f.id}" onclick="selectFile('${f.id}')">
+      <div class="device-status"><span class="dot"></span><span class="status-text">${T("CLEAN", "سليم")}</span></div>
+      <div class="device-name">${f.id}</div>
+      <div class="device-role">${T(f.role_en, f.role_ar)}</div>
+    </button>`).join("");
+  restoreDeviceStates();
+}
+function restoreDeviceStates(){
+  state.flagged.forEach(id => {
+    const el = document.querySelector(`.device[data-id="${id}"]`);
+    if (!el) return;
+    el.classList.add("iso");
+    const s = el.querySelector(".status-text");
+    if (s) s.textContent = T("FIXED", "مُصلَح");
   });
-  window.scrollTo({ top:0, behavior:"smooth" });
 }
-
-const stepData = [
-  { title:"SCAN · تحليل الشفرة", text:"يقوم CodeShield AI بتحليل الشفرة البرمجية سطرًا بسطر فور كتابتها، للبحث عن أنماط غير آمنة أو أخطاء هيكلية محتملة." },
-  { title:"DETECT · اكتشاف الثغرة", text:"عند العثور على نمط يطابق ثغرة أمنية معروفة (مثل حقن SQL أو XSS)، يسجل النظام الحدث ويبدأ تحليل الخطورة." },
-  { title:"ANALYZE · تحليل الخطورة", text:"يقيّم النموذج مستوى خطورة الثغرة وتأثيرها المحتمل، مع تفسير مبسط للقرار داخل محرك الذكاء الاصطناعي." },
-  { title:"FIX · اقتراح الإصلاح", text:"يقترح النظام تصحيحًا آليًا جاهزًا للتطبيق، يعالج جذر المشكلة دون تغيير وظيفة الكود." },
-  { title:"VERIFY · التحقق بالاختبار", text:"بعد تطبيق الإصلاح، يُنشئ CodeShield AI اختبارًا برمجيًا تلقائيًا للتأكد من سلامة النظام وعدم تكرار الثغرة." }
-];
-
-function showStep(index){
-  document.querySelectorAll(".step").forEach((step,i)=>step.classList.toggle("active", i===index));
-  const data = stepData[index];
-  document.getElementById("stepDetail").innerHTML =
-    `<div><div class="eyebrow">STEP ${String(index+1).padStart(2,"0")}</div><h3>${data.title}</h3><p>${data.text}</p></div>`;
-}
+function getFile(id){ return sampleFiles.find(f => f.id === id); }
 
 function renderNetworkLines(){
-  const container = document.getElementById("networkLines");
-  if(!container) return;
-  const area = container.parentElement;
+  const c = document.getElementById("networkLines");
+  if (!c) return;
+  const area = c.parentElement;
   const rect = area ? area.getBoundingClientRect() : null;
   const w = rect && rect.width ? rect.width : 800;
   const h = rect && rect.height ? rect.height : 455;
-  container.innerHTML = "";
-  const positions = [
-    ["9%","18%","50%","50%"],["42%","11%","50%","50%"],["91%","18%","50%","50%"],["6%","53%","50%","50%"],
-    ["94%","53%","50%","50%"],["17%","88%","50%","50%"],["45%","94%","50%","50%"],["83%","88%","50%","50%"]
-  ];
-  positions.forEach(p=>{
-    const line = document.createElement("div");
-    line.className = "line";
-    const x1 = parseFloat(p[0])/100*w, y1 = parseFloat(p[1])/100*h;
-    const x2 = parseFloat(p[2])/100*w, y2 = parseFloat(p[3])/100*h;
-    const dx = x2-x1, dy = y2-y1;
-    const length = Math.sqrt(dx*dx+dy*dy);
-    const angle = Math.atan2(dy,dx)*180/Math.PI;
-    line.style.left = p[0];
-    line.style.top = p[1];
-    line.style.width = length+"px";
-    line.style.transform = `rotate(${angle}deg)`;
-    container.appendChild(line);
-  });
-}
-
-function getFile(id){ return files.find(f=>f.id===id); }
-
-function codeBlockHTML(file){
-  const v = file.vuln;
-  return `
-    <div class="code-label">VULNERABLE CODE</div>
-    <div class="code-block before">${escapeHtml(v.before)}</div>
-    <div class="code-label">AI-SUGGESTED FIX</div>
-    <div class="code-block after">${escapeHtml(v.after)}</div>
-    <div class="code-label">GENERATED TEST</div>
-    <div class="code-block test">${escapeHtml(v.test)}</div>
-  `;
-}
-
-function escapeHtml(str){
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
+  c.innerHTML = "";
+  [["9%","18%"],["42%","11%"],["91%","18%"],["6%","53%"],["94%","53%"],["17%","88%"],["45%","94%"],["83%","88%"]]
+    .forEach(p => {
+      const line = document.createElement("div");
+      line.className = "line";
+      const x1 = parseFloat(p[0]) / 100 * w, y1 = parseFloat(p[1]) / 100 * h;
+      const dx = w / 2 - x1, dy = h / 2 - y1;
+      line.style.left = p[0]; line.style.top = p[1];
+      line.style.width = Math.sqrt(dx * dx + dy * dy) + "px";
+      line.style.transform = `rotate(${Math.atan2(dy, dx) * 180 / Math.PI}deg)`;
+      c.appendChild(line);
+    });
 }
 
 function selectFile(id){
   state.selected = id;
-  const file = getFile(id);
-  if(!file) return;
-  const element = document.querySelector(`.device[data-id="${id}"]`);
-  const flagged = state.flaggedFiles.has(id);
-  const isFixed = element && element.classList.contains("iso");
-
-  document.getElementById("detailName").textContent = file.id;
-  document.getElementById("detailIP").textContent = file.module;
-  document.getElementById("detailStatus").textContent = flagged ? (isFixed ? "FIXED" : "VULNERABLE") : "CLEAN";
-  document.getElementById("detailRisk").textContent = flagged ? file.vuln.severity : "LOW";
-  document.getElementById("detailBehavior").textContent = flagged ? file.vuln.type : "No known issues";
-  document.getElementById("detailEvent").textContent = flagged ? (isFixed ? "Fix verified" : "Awaiting remediation") : "No active scan";
-  document.getElementById("detailAI").textContent = flagged
-    ? file.vuln.reason
-    : "Select a file and run a scan to inspect its current state.";
-
-  document.getElementById("detailCode").innerHTML = flagged ? codeBlockHTML(file) : "";
-
-  if(element){
-    document.querySelectorAll(".device").forEach(d=>d.style.outline="none");
-    element.style.outline = "1px solid var(--accent)";
+  refreshDetail();
+  const el = document.querySelector(`.device[data-id="${id}"]`);
+  if (el){
+    document.querySelectorAll(".device").forEach(d => d.style.outline = "none");
+    el.style.outline = "1px solid var(--accent)";
   }
-
-  if(state.mode === "analyst" && element && element.classList.contains("attacking")){
-    showAnalystControls();
-  } else {
-    document.getElementById("analystControls").style.display = "none";
-  }
-
-  updateAIBrain(id);
 }
 
-function updateAIBrain(id){
-  if(!id){
-    document.getElementById("aiThreat").textContent = "No active scan";
-    document.getElementById("aiRisk").textContent = "0 / 100";
-    document.getElementById("aiTarget").textContent = "—";
-    document.getElementById("aiAction").textContent = "MONITOR";
-    document.getElementById("aiConfidence").textContent = "—";
-    document.getElementById("aiReason").textContent = "Waiting for a scan to run.";
+function refreshDetail(){
+  const id = state.selected;
+  const nameEl = document.getElementById("detailName");
+  if (!id){
+    nameEl.textContent = "—";
+    ["detailStatus","detailRisk","detailBehavior","detailEvent"].forEach(k => document.getElementById(k).textContent = "—");
+    document.getElementById("detailAI").textContent = T("Run a scan, then select a file.", "شغّل فحصًا ثم اختر ملفًا.");
+    document.getElementById("detailCode").innerHTML = "";
     return;
   }
-  const file = getFile(id);
-  if(!file) return;
-  const flagged = state.flaggedFiles.has(id);
+  const f = getFile(id);
+  if (!f) return;
+  const flagged = state.flagged.has(id);
+  const el = document.querySelector(`.device[data-id="${id}"]`);
+  const isFixed = el && el.classList.contains("iso");
 
-  document.getElementById("aiThreat").textContent = flagged ? file.vuln.type : "No active threat";
-  document.getElementById("aiRisk").textContent = flagged ? `${file.vuln.risk} / 100` : "8 / 100";
-  document.getElementById("aiTarget").textContent = flagged ? file.id : "—";
-  document.getElementById("aiAction").textContent = flagged ? "APPLY FIX" : "MONITOR";
-  document.getElementById("aiConfidence").textContent = flagged ? "97%" : "—";
-  document.getElementById("aiReason").textContent = flagged ? file.vuln.reason : "Current file remains within the simulated safe baseline.";
+  nameEl.textContent = f.id;
+  document.getElementById("detailRole").textContent = T(f.role_en, f.role_ar);
+  document.getElementById("detailStatus").textContent = flagged ? (isFixed ? T("FIXED","مُصلَح") : T("VULNERABLE","مصاب")) : T("NOT SCANNED","لم يُفحص");
+  document.getElementById("detailRisk").textContent = flagged ? T(f.v.sev, f.v.sev === "HIGH" ? "عالية" : "متوسطة") : "—";
+  document.getElementById("detailBehavior").textContent = flagged ? T(f.v.type_en, f.v.type_ar) : "—";
+  document.getElementById("detailEvent").textContent = flagged ? (isFixed ? T("Fix verified","تم التحقق من الإصلاح") : T("Awaiting fix","بانتظار الإصلاح")) : "—";
+  document.getElementById("detailAI").textContent = flagged
+    ? T(f.v.why_en, f.v.why_ar)
+    : T("This file has not been scanned in this session.", "لم يُفحص هذا الملف في هذه الجلسة.");
+  document.getElementById("detailCode").innerHTML = flagged ? `
+    <div class="code-label">${T("VULNERABLE CODE","الكود المصاب")}</div>
+    <div class="code-block before">${escapeHtml(f.v.before)}</div>
+    <div class="code-label">${T("SUGGESTED FIX","الإصلاح المقترح")}</div>
+    <div class="code-block after">${escapeHtml(f.v.after)}</div>
+    <div class="code-label">${T("GENERATED PROOF TEST","اختبار الإثبات المُولَّد")}</div>
+    <div class="code-block test">${escapeHtml(f.v.test)}</div>` : "";
+
+  const controls = document.getElementById("analystControls");
+  controls.style.display = (state.mode === "analyst" && el && el.classList.contains("attacking")) ? "grid" : "none";
 }
 
-function addLog(type,text){
-  const time = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  state.logs.unshift({ time, type, text });
+function addLog(type, text){
+  state.logs.unshift({ time:new Date().toLocaleTimeString("en-GB", { hour12:false }), type, text });
   renderLogs();
 }
-
 function renderLogs(){
-  const container = document.getElementById("logs");
-  if(!container) return;
+  const c = document.getElementById("logs");
+  if (!c) return;
   const input = document.getElementById("logSearch");
-  const search = input ? input.value.toLowerCase() : "";
-  container.innerHTML = "";
-  state.logs
-    .filter(log => `${log.type} ${log.text}`.toLowerCase().includes(search))
-    .slice(0,50)
-    .forEach(log=>{
-      const row = document.createElement("div");
-      row.className = "log";
-      const timeCell = document.createElement("div");
-      timeCell.className = "log-time"; timeCell.textContent = log.time;
-      const typeCell = document.createElement("div");
-      typeCell.className = `log-type ${log.type.toLowerCase()}`; typeCell.textContent = log.type;
-      const textCell = document.createElement("div");
-      textCell.className = "log-text"; textCell.textContent = log.text;
-      row.appendChild(timeCell); row.appendChild(typeCell); row.appendChild(textCell);
-      container.appendChild(row);
-    });
-}
-
-function filterLogs(){ renderLogs(); }
-
-function addTimeline(title, description){
-  const timeline = document.getElementById("threatTimeline");
-  if(!timeline) return;
-  const item = document.createElement("div");
-  item.className = "timeline-item";
-  const time = new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  const timeCell = document.createElement("div");
-  timeCell.className = "timeline-time"; timeCell.textContent = time;
-  const titleCell = document.createElement("div");
-  titleCell.className = "timeline-title"; titleCell.textContent = title;
-  const descCell = document.createElement("div");
-  descCell.className = "timeline-desc"; descCell.textContent = description;
-  item.appendChild(timeCell); item.appendChild(titleCell); item.appendChild(descCell);
-  timeline.prepend(item);
-}
-
-function pickScanTarget(){
-  const available = files.filter(f=>!state.flaggedFiles.has(f.id));
-  if(available.length === 0) return null;
-  const preferred = available.find(f=>f.id === "db/queries.py");
-  if(preferred) return preferred;
-  return available[Math.floor(Math.random()*available.length)];
-}
-
-function runScan(){
-  const target = pickScanTarget();
-  if(!target){
-    toast("All files have already been scanned and fixed. Reset to run a new scenario.");
-    return;
-  }
-  state.found++;
-  const start = performance.now();
-  state.flaggedFiles.add(target.id);
-
-  const element = document.querySelector(`.device[data-id="${target.id}"]`);
-  if(element){
-    element.classList.add("attacking");
-    const status = element.querySelector(".status-text");
-    if(status) status.textContent = "VULNERABLE";
-  }
-
-  state.selected = target.id;
-  selectFile(target.id);
-
-  addLog("DETECT", `${target.vuln.type} detected in ${target.id}.`);
-  addTimeline("VULNERABILITY DETECTED", `${target.id} matched a known ${target.vuln.type} pattern.`);
-  addLog("ANALYZE", `Severity assessed as ${target.vuln.severity} (${target.vuln.risk}/100) for ${target.id}.`);
-  addTimeline("RISK ANALYZED", `Severity scored ${target.vuln.risk}/100 based on exploitability and impact.`);
-  updateStats();
-
-  if(state.mode === "autonomous"){
-    setTimeout(()=>{
-      addLog("FIX", `AI generated an automatic patch for ${target.id}.`);
-      addTimeline("AI FIX GENERATED", `A verified patch is being applied to ${target.id}.`);
-      setTimeout(()=>{ applyFix(target.id, performance.now()-start); }, 700);
-    }, 800);
-  } else {
-    showAnalystControls();
-    addLog("ALERT", `Analyst decision required for ${target.id}.`);
-    addTimeline("ANALYST REVIEW", "Manual remediation decision is required.");
-  }
-}
-
-function applyFix(id, responseTime=850){
-  const element = document.querySelector(`.device[data-id="${id}"]`);
-  if(element){
-    element.classList.remove("attacking");
-    element.classList.add("iso");
-    const status = element.querySelector(".status-text");
-    if(status) status.textContent = "FIXED";
-  }
-
-  state.fixed++;
-  state.tests++;
-  state.fixTimes.push(Math.round(responseTime));
-
-  addLog("FIX", `${id} patched successfully.`);
-  addLog("TEST", `Verification test generated and passed for ${id}.`);
-  addTimeline("VULNERABILITY FIXED", `${id} was patched and a regression test was generated.`);
-
-  document.getElementById("networkState").textContent = "CODEBASE SECURE";
-  selectFile(id);
-  document.getElementById("analystControls").style.display = "none";
-  updateStats();
-  toast(`Vulnerability fixed · ${Math.round(responseTime)} ms`);
-}
-
-function setMode(mode){
-  state.mode = mode;
-  document.getElementById("autoMode").classList.toggle("active", mode==="autonomous");
-  document.getElementById("analystMode").classList.toggle("active", mode==="analyst");
-  document.getElementById("modeLabel").textContent = mode==="autonomous" ? "AUTONOMOUS" : "ANALYST";
-  document.getElementById("analystControls").style.display = "none";
-  toast(mode==="autonomous" ? "Autonomous remediation enabled." : "Analyst review mode enabled.");
-}
-
-function showAnalystControls(){
-  document.getElementById("analystControls").style.display = "grid";
-}
-
-function analystAction(action){
-  const id = state.selected;
-  if(!id) return;
-  if(action === "fix"){
-    addLog("FIX", `Analyst approved the AI fix for ${id}.`);
-    applyFix(id, 1420);
-  } else {
-    const element = document.querySelector(`.device[data-id="${id}"]`);
-    if(element){
-      element.classList.remove("attacking");
-      const status = element.querySelector(".status-text");
-      if(status) status.textContent = "CLEAN";
-    }
-    state.flaggedFiles.delete(id);
-    addLog("SYSTEM", `Analyst marked ${id} as a false positive.`);
-    document.getElementById("analystControls").style.display = "none";
-    selectFile(id);
-    toast("File marked safe by analyst.");
-  }
+  const q = input ? input.value.toLowerCase() : "";
+  c.innerHTML = "";
+  state.logs.filter(l => `${l.type} ${l.text}`.toLowerCase().includes(q)).slice(0, 50).forEach(l => {
+    const row = document.createElement("div"); row.className = "log";
+    const a = document.createElement("div"); a.className = "log-time"; a.textContent = l.time;
+    const b = document.createElement("div"); b.className = "log-type " + l.type.toLowerCase(); b.textContent = l.type;
+    const d = document.createElement("div"); d.className = "log-text"; d.textContent = l.text;
+    row.append(a, b, d); c.appendChild(row);
+  });
 }
 
 function updateStats(){
   document.getElementById("statFound").textContent = state.found;
   document.getElementById("statFixed").textContent = state.fixed;
   document.getElementById("statTests").textContent = state.tests;
-  if(state.fixTimes.length){
-    const avg = state.fixTimes.reduce((a,b)=>a+b,0)/state.fixTimes.length;
-    document.getElementById("statTime").textContent = Math.round(avg);
+  document.getElementById("statSecured").textContent = `${state.fixed} / ${sampleFiles.length}`;
+  const allDone = state.fixed === sampleFiles.length;
+  const el = document.getElementById("networkState");
+  el.textContent = allDone
+    ? T("ALL SAMPLE FILES SECURED", "جميع الملفات التجريبية مؤمَّنة")
+    : T("MONITORING", "قيد المراقبة");
+  el.style.color = allDone ? "var(--success)" : "";
+}
+
+function pickScanTarget(){
+  const available = sampleFiles.filter(f => !state.flagged.has(f.id));
+  if (!available.length) return null;
+  return available[0];
+}
+
+function runScan(){
+  const target = pickScanTarget();
+  if (!target){
+    toast(T("Every sample file has been scanned and fixed. Press Reset to run again.", "فُحصت كل الملفات التجريبية وأُصلحت. اضغط «إعادة ضبط» لتشغيلها مجددًا."));
+    return;
+  }
+  state.found++;
+  state.flagged.add(target.id);
+  const el = document.querySelector(`.device[data-id="${target.id}"]`);
+  if (el){
+    el.classList.add("attacking");
+    const s = el.querySelector(".status-text");
+    if (s) s.textContent = T("VULNERABLE", "مصاب");
+  }
+  selectFile(target.id);
+  addLog("DETECT", T(`${target.v.type_en} detected in ${target.id}.`, `اكتُشفت ${target.v.type_ar} في ${target.id}.`));
+  addLog("ANALYZE", T(`Severity assessed as ${target.v.sev} for ${target.id}.`, `قُدّرت خطورة ${target.id} كـ ${target.v.sev}.`));
+  updateStats();
+
+  if (state.mode === "autonomous"){
+    setTimeout(() => {
+      addLog("FIX", T(`Patch generated for ${target.id}.`, `وُلّد إصلاح لـ ${target.id}.`));
+      setTimeout(() => applyFix(target.id), 650);
+    }, 750);
   } else {
-    document.getElementById("statTime").textContent = "—";
+    document.getElementById("analystControls").style.display = "grid";
+    addLog("ALERT", T(`Analyst decision required for ${target.id}.`, `مطلوب قرار المحلّل بشأن ${target.id}.`));
   }
 }
 
-function selectThreat(name, cardEl){
-  document.querySelectorAll(".threat-card").forEach(card=>{
-    card.style.borderColor = ""; card.style.background = "";
-  });
-  if(cardEl){
-    cardEl.style.borderColor = "var(--accent)";
-    cardEl.style.background = "var(--accent-dim)";
+function applyFix(id){
+  const el = document.querySelector(`.device[data-id="${id}"]`);
+  if (el){
+    el.classList.remove("attacking");
+    el.classList.add("iso");
+    const s = el.querySelector(".status-text");
+    if (s) s.textContent = T("FIXED", "مُصلَح");
   }
-  addLog("ALERT", `Vulnerability profile selected: ${name}.`);
-  addTimeline("VULNERABILITY PROFILE", `${name} selected for inspection.`);
-  toast(`${name} selected`);
+  state.fixed++; state.tests++;
+  addLog("FIX", T(`${id} patched.`, `أُصلح ${id}.`));
+  addLog("TEST", T(`Verification test generated and passing for ${id}.`, `وُلّد اختبار تحقّق ناجح لـ ${id}.`));
+  refreshDetail();
+  document.getElementById("analystControls").style.display = "none";
+  updateStats();
+  toast(T("Fix applied and verified.", "طُبّق الإصلاح وتم التحقق منه."));
 }
 
+function setMode(mode){
+  state.mode = mode;
+  document.getElementById("autoMode").classList.toggle("active", mode === "autonomous");
+  document.getElementById("analystMode").classList.toggle("active", mode === "analyst");
+  document.getElementById("modeLabel").textContent = mode === "autonomous" ? T("AUTONOMOUS","تلقائي") : T("ANALYST","محلّل");
+  document.getElementById("analystControls").style.display = "none";
+  toast(mode === "autonomous" ? T("Autonomous mode.","الوضع التلقائي.") : T("Analyst review mode.","وضع مراجعة المحلّل."));
+}
+
+function analystAction(action){
+  const id = state.selected;
+  if (!id) return;
+  if (action === "fix"){
+    addLog("FIX", T(`Analyst approved the fix for ${id}.`, `اعتمد المحلّل الإصلاح لـ ${id}.`));
+    applyFix(id);
+  } else {
+    const el = document.querySelector(`.device[data-id="${id}"]`);
+    if (el){
+      el.classList.remove("attacking");
+      const s = el.querySelector(".status-text");
+      if (s) s.textContent = T("CLEAN", "سليم");
+    }
+    state.flagged.delete(id);
+    state.found = Math.max(0, state.found - 1);
+    addLog("SYSTEM", T(`${id} marked as a false positive.`, `وُسم ${id} كإيجابية كاذبة.`));
+    document.getElementById("analystControls").style.display = "none";
+    refreshDetail(); updateStats();
+    toast(T("Marked as a false positive.", "وُسمت كإيجابية كاذبة."));
+  }
+}
+
+/* ---------- walkthrough overlay ---------- */
 const demoSteps = [
-  { title:"SYSTEM ONLINE", description:"Static analysis engine initialized.", width:10 },
-  { title:"VULNERABILITY DETECTED", description:"A SQL Injection pattern was found in db/queries.py.", width:28 },
-  { title:"RISK ANALYZED", description:"Severity assessed as HIGH based on exploitability and data exposure.", width:48 },
-  { title:"AI FIX GENERATED", description:"A parameterized query fix was generated automatically.", width:65 },
-  { title:"TEST GENERATED", description:"An automated regression test was created to verify the fix.", width:82 },
-  { title:"VERIFIED ✓", description:"The fix was applied and verified. The file is now secure.", width:100 }
+  { en:"ENGINE READY", ar:"المحرك جاهز", den:"Rule engine initialised.", dar:"تم تهيئة محرك القواعد.", w:10 },
+  { en:"VULNERABILITY DETECTED", ar:"اكتُشفت ثغرة", den:"A SQL Injection pattern was matched in db/queries.py.", dar:"طوبق نمط حقن SQL في db/queries.py.", w:28 },
+  { en:"SEVERITY ASSIGNED", ar:"حُدّدت الخطورة", den:"Classified HIGH — CWE-89, OWASP A03:2021.", dar:"صُنّفت عالية — CWE-89، وOWASP A03:2021.", w:48 },
+  { en:"FIX PROPOSED", ar:"اقتُرح الإصلاح", den:"A parameterized query replaces the concatenated string.", dar:"استعلام معلمن يحلّ محل النص المدموج.", w:66 },
+  { en:"PROOF GENERATED", ar:"وُلّد الإثبات", den:"A regression test is written that fails on the old code.", dar:"كُتب اختبار انحدار يفشل على الكود القديم.", w:84 },
+  { en:"VERIFIED ✓", ar:"تم التحقق ✓", den:"The test passes on the patched version. The loop is closed.", dar:"ينجح الاختبار على النسخة المُصلَحة. اكتملت الدورة.", w:100 }
 ];
-
-let demoIndex = 0;
-let demoTimer = null;
-
+let demoIndex = 0, demoTimer = null;
 function startLiveDemo(){
   document.getElementById("demoOverlay").classList.add("show");
   demoIndex = 0;
   document.getElementById("demoProgress").style.width = "0%";
   runDemoStep();
 }
-
 function runDemoStep(){
-  if(demoIndex >= demoSteps.length) return;
-  const step = demoSteps[demoIndex];
-  document.getElementById("demoStatus").textContent = step.title;
-  document.getElementById("demoDescription").textContent = step.description;
-  document.getElementById("demoProgress").style.width = step.width+"%";
+  if (demoIndex >= demoSteps.length) return;
+  const s = demoSteps[demoIndex];
+  document.getElementById("demoStatus").textContent = T(s.en, s.ar);
+  document.getElementById("demoDescription").textContent = T(s.den, s.dar);
+  document.getElementById("demoProgress").style.width = s.w + "%";
   demoIndex++;
-  if(demoIndex < demoSteps.length){
-    demoTimer = setTimeout(runDemoStep, 1100);
-  } else {
-    demoTimer = setTimeout(()=>{ demoSimulationEffect(); }, 400);
+  if (demoIndex < demoSteps.length) demoTimer = setTimeout(runDemoStep, 1150);
+  else demoTimer = setTimeout(finishDemo, 700);
+}
+// the walkthrough now actually advances the simulation, so the counters match what it claims
+function finishDemo(){
+  const id = "db/queries.py";
+  if (!state.flagged.has(id)){
+    state.flagged.add(id);
+    state.found++;
+    applyFix(id);
   }
 }
-
-function demoSimulationEffect(){
-  const target = document.querySelector('.device[data-id="db/queries.py"]');
-  if(target){
-    target.classList.remove("attacking");
-    target.classList.add("iso");
-    const status = target.querySelector(".status-text");
-    if(status) status.textContent = "FIXED";
-  }
-}
-
 function closeDemo(){
   clearTimeout(demoTimer);
   document.getElementById("demoOverlay").classList.remove("show");
-  const target = document.querySelector('.device[data-id="db/queries.py"]');
-  if(target && !state.flaggedFiles.has("db/queries.py")){
-    target.classList.remove("attacking","iso");
-    const status = target.querySelector(".status-text");
-    if(status) status.textContent = "CLEAN";
-  }
 }
 
 function resetSystem(){
-  state.found = 0; state.fixed = 0; state.tests = 0; state.fixTimes = [];
-  state.flaggedFiles.clear(); state.selected = null;
-
-  document.querySelectorAll(".device").forEach(device=>{
-    device.classList.remove("attacking","iso");
-    const status = device.querySelector(".status-text");
-    if(status) status.textContent = "CLEAN";
-    device.style.outline = "none";
+  state.found = 0; state.fixed = 0; state.tests = 0;
+  state.flagged.clear(); state.selected = null;
+  document.querySelectorAll(".device").forEach(d => {
+    d.classList.remove("attacking", "iso");
+    const s = d.querySelector(".status-text");
+    if (s) s.textContent = T("CLEAN", "سليم");
+    d.style.outline = "none";
   });
-
-  document.getElementById("networkState").textContent = "SCANNING ACTIVE";
-  document.getElementById("detailName").textContent = "Select a file";
-  document.getElementById("detailIP").textContent = "Click any file on the codebase map.";
-  document.getElementById("detailStatus").textContent = "—";
-  document.getElementById("detailRisk").textContent = "—";
-  document.getElementById("detailBehavior").textContent = "—";
-  document.getElementById("detailEvent").textContent = "—";
-  document.getElementById("detailAI").textContent = "Select a file to inspect its current state.";
-  document.getElementById("detailCode").innerHTML = "";
   document.getElementById("analystControls").style.display = "none";
-
-  state.logs = [
-    { time:"SYSTEM", type:"SYSTEM", text:"CodeShield AI scanning engine initialized successfully." },
-    { time:"SYSTEM", type:"SYSTEM", text:"Autonomous remediation simulation is ready." }
-  ];
-
-  document.getElementById("threatTimeline").innerHTML = `
-    <div class="timeline-item"><div class="timeline-time">SYSTEM</div><div class="timeline-title">Scanning engine initialized</div><div class="timeline-desc">Continuous code analysis is active.</div></div>
-    <div class="timeline-item"><div class="timeline-time">READY</div><div class="timeline-title">Waiting for a vulnerability</div><div class="timeline-desc">No active incident.</div></div>
-  `;
-
-  updateAIBrain(null);
-  updateStats();
-  renderLogs();
-  toast("System reset successfully.");
+  state.logs = [{ time:"—", type:"SYSTEM", text:T("Simulation reset.", "أُعيد ضبط المحاكاة.") }];
+  refreshDetail(); updateStats(); renderLogs();
+  toast(T("Simulation reset.", "أُعيد ضبط المحاكاة."));
 }
 
+/* ---------- appearance ---------- */
 function setTheme(theme){
   state.theme = theme;
-  document.body.classList.toggle("light", theme==="light");
-  const toggle = document.getElementById("themeToggle");
-  if(toggle){
-    toggle.querySelectorAll("button").forEach(btn=>btn.classList.toggle("active", btn.dataset.value===theme));
-  }
-  try{ localStorage.setItem("codeshield-theme", theme); }catch(e){}
+  document.body.classList.toggle("light", theme === "light");
+  const t = document.getElementById("themeToggle");
+  if (t) t.querySelectorAll("button").forEach(b => b.classList.toggle("active", b.dataset.value === theme));
+  try { localStorage.setItem("cs-theme", theme); } catch (e) {}
 }
+function toggleTheme(){ setTheme(state.theme === "dark" ? "light" : "dark"); }
 
-function toggleTheme(){ setTheme(state.theme==="dark" ? "light" : "dark"); }
-
-function setPalette(palette){
+function setPalette(p){
   document.body.classList.remove("palette-blue","palette-lavender","palette-pink","palette-gray");
-  document.body.classList.add(`palette-${palette}`);
-  state.palette = palette;
-  document.querySelectorAll(".palette").forEach(el=>el.classList.remove("active"));
-  const selector = palette==="lavender" ? ".p-lav" : `.p-${palette}`;
-  const active = document.querySelector(selector);
-  if(active) active.classList.add("active");
-  try{ localStorage.setItem("codeshield-palette", palette); }catch(e){}
-}
-
-function toggleLanguage(){ setLanguage(state.language==="en" ? "ar" : "en"); }
-
-function setLanguage(lang){
-  state.language = lang;
-  document.documentElement.lang = lang;
-  document.documentElement.dir = lang==="ar" ? "rtl" : "ltr";
-  const toggle = document.getElementById("langToggle");
-  if(toggle){
-    toggle.querySelectorAll("button").forEach(btn=>btn.classList.toggle("active", btn.dataset.value===lang));
-  }
-  try{ localStorage.setItem("codeshield-language", lang); }catch(e){}
-  toast(lang==="ar" ? "تم تغيير اتجاه الواجهة إلى العربية" : "Interface language set to English");
+  document.body.classList.add("palette-" + p);
+  state.palette = p;
+  document.querySelectorAll(".palette").forEach(e => e.classList.remove("active"));
+  const sel = p === "lavender" ? ".p-lav" : ".p-" + p;
+  const a = document.querySelector(sel);
+  if (a) a.classList.add("active");
+  try { localStorage.setItem("cs-palette", p); } catch (e) {}
 }
 
 let toastTimer = null;
-function toast(message){
+function toast(msg){
   const el = document.getElementById("toast");
-  el.textContent = message;
+  el.textContent = msg;
   el.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>el.classList.remove("show"), 2600);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 2600);
 }
 
-function loadPreferences(){
-  let theme, palette, language;
-  try{
-    theme = localStorage.getItem("codeshield-theme");
-    palette = localStorage.getItem("codeshield-palette");
-    language = localStorage.getItem("codeshield-language");
-  }catch(e){ return; }
-  if(theme) setTheme(theme);
-  if(palette) setPalette(palette);
-  if(language) setLanguage(language);
-}
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDemo(); });
+window.addEventListener("resize", renderNetworkLines);
 
-document.addEventListener("keydown", event=>{
-  if(event.key === "Escape") closeDemo();
-});
+document.addEventListener("DOMContentLoaded", () => {
+  let saved = {};
+  try {
+    saved = {
+      theme:localStorage.getItem("cs-theme"),
+      palette:localStorage.getItem("cs-palette"),
+      language:localStorage.getItem("cs-language")
+    };
+  } catch (e) {}
+  if (saved.theme) setTheme(saved.theme);
+  if (saved.palette) setPalette(saved.palette);
 
-document.addEventListener("DOMContentLoaded", ()=>{
-  loadPreferences();
-  renderNetworkLines();
   state.logs = [
-    { time:"SYSTEM", type:"SYSTEM", text:"CodeShield AI scanning engine initialized successfully." },
-    { time:"SYSTEM", type:"SYSTEM", text:"Static analysis is active." },
-    { time:"SYSTEM", type:"SYSTEM", text:"Autonomous remediation simulation is ready." }
+    { time:"—", type:"SYSTEM", text:"CodeShield simulation ready." },
+    { time:"—", type:"SYSTEM", text:"Sample repository loaded (8 files)." }
   ];
-  renderLogs();
-  updateStats();
+
+  renderDevices();
+  renderNetworkLines();
+  renderThreatCatalog();
+  setLanguage(saved.language === "ar" ? "ar" : "en");
   showStep(0);
-  updateAIBrain(null);
+  renderFindings();
+  updateStats();
+  refreshDetail();
 });
 </script>
 
