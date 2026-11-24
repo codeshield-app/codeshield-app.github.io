@@ -5,14 +5,15 @@ import { db, toRecord } from "./db.js";
 import { fetchRepo } from "./github.js";
 import { printReport } from "./report.js";
 import { SAMPLES } from "./samples.js";
-import { runBenchmark } from "./benchmark.js";
+import { runBenchmark, CASES } from "./benchmark.js";
 import { applyFixes, diffLines, buildSarif, extFor } from "./export.js";
 import { loadProgress, onProgress, track, setName, progress, levelOf } from "./progress.js";
 import { kv } from "./db.js";
 import { initAcademy } from "./academy.js";
+import { ATTACKS } from "./attacks.js";
 
 /* ---------------- state ---------------- */
-const state = { lang:"ar", theme:"dark", scans:{ scan:null, repo:null } };
+const state = { lang:"ar", theme:"dark", scans:{ scan:null, repo:null }, filter:{ scan:{ sev:"ALL", q:"" }, repo:{ sev:"ALL", q:"" } } };
 const $ = id => document.getElementById(id);
 const T = (en, ar) => state.lang === "ar" ? ar : en;
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c]));
@@ -39,6 +40,7 @@ function setLang(lang){
   $("langBtn").textContent = lang === "ar" ? "EN" : "ع";
   applyI18n();
   rerenderAll();
+  if (tour.el) tourRender();
 }
 function setTheme(theme){
   state.theme = theme; store.set("theme", theme);
@@ -46,7 +48,7 @@ function setTheme(theme){
 }
 
 /* ---------------- navigation ---------------- */
-const SCREENS = ["home", "scanner", "github", "learn", "dashboard", "rules", "about"];
+const SCREENS = ["home", "scanner", "github", "learn", "dashboard", "rules", "checklist", "about"];
 function go(screen, push = true){
   if (!SCREENS.includes(screen)) screen = "home";
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("active", s.id === screen));
@@ -55,6 +57,7 @@ function go(screen, push = true){
   if (push && location.hash !== "#" + screen) history.pushState(null, "", "#" + screen);
   if (screen === "dashboard") renderDashboard();
   if (screen === "learn" && academy) academy.render();
+  if (screen === "checklist") renderChecklist();
   window.scrollTo({ top:0 });
 }
 
@@ -121,6 +124,7 @@ function labHTML(f){
       <div class="row">
         <button class="btn primary sm" data-action="verify" data-fid="${f.id}">${T("▶ Run verification", "▶ شغّل التحقق")}</button>
         ${f.autoPatch ? `<button class="btn sm" data-action="reset" data-fid="${f.id}">${T("Reset fix", "استرجع الإصلاح المقترح")}</button>` : ""}
+        <button class="btn sm" data-action="copy-fix" data-fid="${f.id}">📋 ${T("Copy fixed code", "انسخ الكود المعدَّل")}</button>
       </div>
       <div class="proof-steps">
         <div class="pstep ${s1}"><b>1 · ${T("Check on original", "الفحص على الأصل")}</b><span class="st">${st1}</span></div>
@@ -135,6 +139,51 @@ function labHTML(f){
         "نوع الدليل: إعادة فحص بالقواعد للكود الأصلي والمعدَّل، مُسجَّلة بتوقيت. اختبار الوحدة بالأسفل ملف منفصل يُشغَّل داخل مشروعك.")}</p>
     </div>`;
 }
+
+/* "How would an attacker use this?" — a classic teaching example per rule */
+function attackHTML(f){
+  const a = ATTACKS[f.ruleId]; if (!a) return "";
+  return `<div class="box attack">
+    <div class="label">⚔ ${T("How would an attacker use this?", "كيف يستغلها المهاجم؟")}</div>
+    <div class="attack-in"><span>${T("Attacker sends", "المهاجم يرسل")}</span><code class="ltr">${esc(a.input)}</code></div>
+    <p>${esc(T(a.en, a.ar))}</p>
+    <div class="attack-note">${T("Teaching example — never test on systems you don't own.", "مثال تعليمي — لا تجرّبه أبدًا على أنظمة ما تملكها.")}</div>
+  </div>`;
+}
+
+/* severity filter + search over a findings list */
+const SEVS = ["ALL", "HIGH", "MEDIUM", "LOW"];
+function applyFilter(list, target){
+  const f = state.filter[target], q = f.q.trim().toLowerCase();
+  return list.filter(x => (f.sev === "ALL" || x.severity === f.sev) &&
+    (!q || [x.name_en, x.name_ar, x.cwe, x.ruleId, x.file, x.snippet].some(v => String(v || "").toLowerCase().includes(q))));
+}
+function filterBar(target, all, shown){
+  if (all.length < 2) return "";
+  const f = state.filter[target], n = s => s === "ALL" ? all.length : all.filter(x => x.severity === s).length;
+  return `<div class="filterbar">
+    <div class="sev-chips">${SEVS.filter(s => s === "ALL" || n(s)).map(s => `<button class="fchip ${s.toLowerCase()} ${f.sev === s ? "on" : ""}" data-action="filter-sev" data-target="${target}" data-sev="${s}">${s === "ALL" ? T("All", "الكل") : sevLabel(s)} <b>${n(s)}</b></button>`).join("")}</div>
+    <input class="fsearch" type="search" data-filter-q="${target}" value="${esc(f.q)}" placeholder="${T("Search: name, CWE, file…", "ابحث: اسم الثغرة، CWE، الملف…")}" aria-label="${T("Search findings", "ابحث في النتائج")}">
+    ${shown.length !== all.length ? `<span class="note">${T(`Showing ${shown.length} of ${all.length}`, `يعرض ${shown.length} من ${all.length}`)}</span>` : ""}
+  </div>`;
+}
+const filterEmpty = () => `<div class="empty"><div class="big">⌕</div>${T("No findings match this filter.", "ما فيه نتائج تطابق هذا الفلتر.")}</div>`;
+
+/* "fix these first": the three most severe findings that are not verified yet */
+function priorityHTML(scan){
+  const open = sortF(scan.findings.filter(f => !(f.verify && f.verify.status === "verified")));
+  if (!scan.findings.length) return "";
+  if (!open.length) return `<div class="priority done">🎉 ${T("Every fix in this scan is verified.", "كل الإصلاحات في هذا الفحص مُتحقَّق منها.")}</div>`;
+  return `<div class="priority">
+    <div class="label">🎯 ${T("Fix these first", "ابدأ بهذول أول")}</div>
+    <ol>${open.slice(0, 3).map(f => `<li><button class="prio-item" data-action="jump" data-fid="${f.id}">
+      <span class="chip ${f.severity.toLowerCase()}">${sevLabel(f.severity)}</span>
+      <span class="prio-name">${esc(T(f.name_en, f.name_ar))}</span>
+      <span class="prio-where${f.file ? " ltr" : ""}">${f.file ? esc(f.file) + ":" + f.line : T("line ", "سطر ") + f.line}</span></button></li>`).join("")}</ol>
+    ${open.length > 3 ? `<div class="note">${T(`+ ${open.length - 3} more after these`, `+ ${open.length - 3} غيرها بعدهم`)}</div>` : ""}
+  </div>`;
+}
+const rerenderTarget = t => t === "repo" ? renderRepo() : renderScanFindings();
 
 function findingHTML(f, open){
   return `
@@ -161,6 +210,7 @@ function findingHTML(f, open){
         </div>` : `<div class="code-label">${T("Vulnerable line", "السطر المصاب")}</div>`}
       <div class="finding-code">${esc(f.snippet)}</div>
       <p class="why">${esc(T(f.why_en, f.why_ar))}</p>
+      ${attackHTML(f)}
       <div class="box fix"><div class="label">${T("Suggested fix", "الإصلاح المقترح")}</div><p>${esc(T(f.fix_en, f.fix_ar))}</p></div>
       ${labHTML(f)}
       <div class="box proof">
@@ -185,7 +235,8 @@ function renderScanFindings(){
   if (!scan){ box.innerHTML = `<div class="empty"><div class="big">⌘</div>${T("Paste code, or load a sample, then press Scan code.", "الصق كودًا، أو حمّل مثالًا، ثم اضغط «افحص الكود».")}</div>`; return; }
   if (!scan.findings.length){ box.innerHTML = `<div class="empty"><div class="big">✓</div>${T("No flaw matched the active rules.<br>Remember: the engine works line by line.", "لم تطابق أي ثغرة القواعد الفعّالة.<br>تذكّر: يعمل المحرك سطرًا بسطر.")}</div>`; return; }
   const open = openIds(box), first = !open.size;
-  box.innerHTML = fixBar("scan", null, scan) + `<div class="findings">${sortF(scan.findings).map((f, i) => findingHTML(f, first ? i === 0 : open.has(f.id))).join("")}</div>`;
+  const shown = applyFilter(scan.findings, "scan");
+  box.innerHTML = priorityHTML(scan) + shareBar(scan) + filterBar("scan", scan.findings, shown) + fixBar("scan", null, scan) + `<div class="findings">${shown.length ? sortF(shown).map((f, i) => findingHTML(f, first ? i === 0 : open.has(f.id))).join("") : filterEmpty()}</div>`;
 }
 
 /* "download the fixed file" strip — active once at least one fix is verified */
@@ -205,7 +256,8 @@ function renderRepo(){
   const openFiles = new Set([...el.querySelectorAll("details[open]")].map(d => d.dataset.file));
   const open = openIds(el);
   const byFile = {};
-  sortF(scan.findings).forEach(f => (byFile[f.file] = byFile[f.file] || []).push(f));
+  const shown = applyFilter(scan.findings, "repo");
+  sortF(shown).forEach(f => (byFile[f.file] = byFile[f.file] || []).push(f));
   const files = Object.keys(byFile).sort((a, b) => byFile[b].filter(f => f.severity === "HIGH").length - byFile[a].filter(f => f.severity === "HIGH").length || byFile[b].length - byFile[a].length);
   el.innerHTML = `
     <div class="card card-pad" style="margin-bottom:14px">
@@ -222,6 +274,7 @@ function renderRepo(){
       </div>
     </div>
     <div class="summary" id="repoSummary"></div>
+    ${scan.findings.length ? priorityHTML(scan) + filterBar("repo", scan.findings, shown) : ""}
     ${files.length ? files.map((file, i) => `
       <details class="file-group" data-file="${esc(file)}" ${openFiles.has(file) || (!openFiles.size && i === 0) ? "open" : ""}>
         <summary><span class="file-path" style="margin:0">${esc(file)}</span>
@@ -229,7 +282,7 @@ function renderRepo(){
         ${fixBar("repo", file, scan)}
         <div class="findings">${byFile[file].map(f => findingHTML(f, open.has(f.id))).join("")}</div>
       </details>`).join("")
-    : `<div class="card empty"><div class="big">✓</div>${T("No flaw matched the active rules in this repository.", "لم تطابق أي ثغرة القواعد الفعّالة في هذا المستودع.")}</div>`}`;
+    : scan.findings.length ? filterEmpty() : `<div class="card empty"><div class="big">✓</div>${T("No flaw matched the active rules in this repository.", "لم تطابق أي ثغرة القواعد الفعّالة في هذا المستودع.")}</div>`}`;
   renderSummary($("repoSummary"), scan);
 }
 
@@ -257,6 +310,7 @@ function runScan(){
   const code = $("codeInput").value;
   if (!code.trim()){ toast(T("Paste some code first.", "الصق كودًا أولًا.")); return; }
   const lang = detectLanguage(code, $("langHint").value);
+  state.filter.scan = { sev:"ALL", q:"" };
   const res = scanCode(code, lang);
   const names = { python:"Python", javascript:"JavaScript", php:"PHP", ruby:"Ruby", shell:"Shell" };
   state.scans.scan = buildScan("paste", `${names[lang]} · ${res.lineCount} ${T("lines", "سطر")}`, res.findings, res.lineCount, { lang, code });
@@ -299,6 +353,7 @@ function scanFiles(source, label, files, extra = {}){
   let findings = [], lines = 0;
   const codes = {};
   files.forEach(f => { codes[f.path] = f.code; const r = scanCode(f.code, f.lang, f.path); findings = findings.concat(r.findings); lines += r.lineCount; });
+  state.filter.repo = { sev:"ALL", q:"" };
   state.scans.repo = buildScan(source, label, findings, lines, { files:files.length, codes, ...extra });
   $("repoResult").innerHTML = "";
   renderRepo();
@@ -376,6 +431,27 @@ document.addEventListener("click", e => {
     if (v.status === "verified") track("verify", { key:fkey(hit.scan, hit.f) });
     rerenderFinding(fid);
     toast(v.status === "verified" ? T("Fix verified ✓", "تم التحقق من الإصلاح ✓") : T("Not verified — see the evidence.", "لم يتحقق الإصلاح — راجع الدليل."));
+  } else if (act === "share-scan"){
+    shareScan();
+  } else if (act === "rule-link"){
+    activeRule = a.dataset.ruleId; go("rules"); renderRules(); $("ruleDetail").scrollIntoView({ behavior:"smooth", block:"start" });
+  } else if (act === "check-reset"){
+    ticks = {}; store.set("checklist", "{}"); renderChecklist();
+  } else if (act === "copy-fix"){
+    const ta = document.querySelector(`[data-patch="${fid}"]`); if (!ta) return;
+    const done = () => toast(T("Fixed code copied ✓", "تم نسخ الكود المعدَّل ✓"));
+    if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(ta.value).then(done, () => { ta.select(); document.execCommand("copy"); done(); });
+    else { ta.select(); document.execCommand("copy"); done(); }
+  } else if (act === "filter-sev"){
+    state.filter[a.dataset.target].sev = a.dataset.sev; rerenderTarget(a.dataset.target);
+  } else if (act === "jump"){
+    const hit = locate(fid); if (!hit) return;
+    const t = hit.key, fl = state.filter[t];
+    if (!applyFilter([hit.f], t).length){ fl.sev = "ALL"; fl.q = ""; rerenderTarget(t); }
+    const el = document.querySelector(`.finding[data-fid="${fid}"]`); if (!el) return;
+    const d = el.closest("details"); if (d) d.open = true;
+    el.classList.add("open"); el.querySelector(".finding-head").setAttribute("aria-expanded", "true");
+    el.scrollIntoView({ behavior:"smooth", block:"start" });
   } else if (act === "reset"){
     const hit = locate(fid); if (!hit) return;
     hit.f.patch = hit.f.autoPatch || hit.f.raw; hit.f.verify = null;
@@ -450,6 +526,7 @@ async function renderDashboard(){
     $("kpis").innerHTML = `<div class="card kpi" style="grid-column:1/-1">${T("This browser blocks local storage, so history is unavailable here.", "هذا المتصفح يمنع التخزين المحلي، لذلك السجل غير متاح هنا.")}</div>`;
     return;
   }
+  $("scoreChart").innerHTML = scoreChartHTML(rows);
   const allF = rows.flatMap(r => r.findings);
   const verified = allF.filter(f => f.status === "verified").length;
   const avg = rows.length ? Math.round(rows.reduce((s, r) => s + (r.score || 0), 0) / rows.length) : 0;
@@ -508,11 +585,13 @@ function renderRules(){
     <h3>${esc(ruleName(r))}</h3>
     <p class="why" style="margin-top:0">${esc(T(r.why_en, r.why_ar))}</p>
     <div class="box fix"><div class="label">${T("How CodeShield fixes it", "كيف يصلحها كودشيلد")}</div><p>${esc(T(r.fix_en, r.fix_ar))}</p></div>
+    ${ruleExamplesHTML(r.id)}
     <p class="note ltr" style="margin-top:12px">${esc(r.owasp)}</p>`;
 }
 document.addEventListener("click", e => {
   const c = e.target.closest("[data-rule]"); if (!c) return;
   activeRule = c.dataset.rule; renderRules();
+  if (window.innerWidth < 960) $("ruleDetail").scrollIntoView({ behavior:"smooth", block:"start" });   // on phones the detail sits below the list
 });
 
 /* ---------------- accuracy (benchmark) ---------------- */
@@ -541,31 +620,218 @@ function renderBenchmark(rerun){
       "ملاحظة بصراحة: هذه مجموعة اختبار خاصة بكودشيلد كُتبت مع القواعد — هدفها كشف أي تراجع، وليست معيارًا مستقلًا. الدقة في المشاريع الحقيقية ستكون أقل، والقياس على OWASP Benchmark ضمن خارطة الطريق.")}</p>`;
 }
 
-/* ---------------- demo ---------------- */
-async function demo(){
-  const wait = ms => new Promise(r => setTimeout(r, ms));
-  go("scanner");
-  $("codeInput").value = SAMPLES.python; $("langHint").value = "python";
-  toast(T("1/3 · Scanning vulnerable Python code…", "١/٣ · فحص كود بايثون مصاب…"));
-  await wait(1100); runScan();
-  const sqli = state.scans.scan.findings.find(f => f.ruleId === "SQLI");
-  await wait(1600);
-  const box = $("scanFindings");
-  box.querySelectorAll(".finding.open").forEach(el => el.classList.remove("open"));
-  const el = box.querySelector(`.finding[data-fid="${sqli.id}"]`);
-  el.classList.add("open"); el.scrollIntoView({ behavior:"smooth", block:"start" });
-  toast(T("2/3 · SQL injection found, fix drafted…", "٢/٣ · اكتُشف حقن SQL وجُهّز الإصلاح…"));
-  await wait(2200);
-  verifyFinding(sqli); rerenderFinding(sqli.id);
-  document.querySelector(`.finding[data-fid="${sqli.id}"] .box.lab`).scrollIntoView({ behavior:"smooth", block:"center" });
-  toast(T("3/3 · Failed on the original, passed on the fix — verified ✓", "٣/٣ · فشل على الأصل ونجح على الإصلاح — تم التحقق ✓"));
+/* ---------------- guided demo (exhibition tour) ----------------
+   A step card at the bottom of the screen walks through scan → understand → fix → prove.
+   The presenter moves with Next/Back, the arrow keys or Enter; Esc closes. Open it directly with #demo. */
+const tour = { i:-1, el:null, focus:null };
+const tourSqli = () => state.scans.scan && state.scans.scan.findings.find(f => f.ruleId === "SQLI");
+const tourFinding = () => { const f = tourSqli(); return f && document.querySelector(`#scanFindings .finding[data-fid="${f.id}"]`); };
+const TOUR = [
+  { title:["Paste your code", "الصق كودك"],
+    text:() => T("We'll use a small Python file with real-world mistakes. You can paste any Python, JavaScript, PHP, Ruby or shell code here.",
+                 "نستخدم ملف بايثون صغير فيه أخطاء أمنية شائعة. تقدر تلصق هنا أي كود Python أو JavaScript أو PHP أو Ruby أو Shell."),
+    run:() => { go("scanner"); state.filter.scan = { sev:"ALL", q:"" }; state.scans.scan = null; renderScanFindings(); $("codeInput").value = SAMPLES.python; $("langHint").value = "python"; },
+    target:() => $("codeInput") },
+  { title:["Scan", "افحص"],
+    text:() => { const s = state.scans.scan.summary;
+      return T(`${s.total} vulnerabilities found in under a second, ${s.HIGH} of them high severity. 23 rules check every line, and data-flow tracking follows untrusted input across lines. Nothing was sent to a server.`,
+               `اكتشف ${s.total} ثغرة في أقل من ثانية، منها ${s.HIGH} عالية الخطورة. ٢٣ قاعدة تفحص كل سطر، ومتتبّع البيانات يلاحق المدخل غير الموثوق عبر الأسطر. ولا شي انرسل لأي خادم.`); },
+    run:() => runScan(), target:() => $("scanSummary") },
+  { title:["Understand it", "افهم الثغرة"],
+    text:() => T("SQL injection: user input is glued into a database query. Every finding shows its severity, its CWE number, the exact line, and why it is dangerous, in full Arabic.",
+                 "حقن SQL: مدخل المستخدم ملصوق داخل استعلام قاعدة البيانات. كل ثغرة معها درجة خطورتها، ورقمها في CWE، والسطر بالضبط، وشرح بالعربي ليش هي خطيرة."),
+    run:() => { const box = $("scanFindings"); box.querySelectorAll(".finding.open").forEach(el => el.classList.remove("open")); const el = tourFinding(); if (el) el.classList.add("open"); },
+    target:() => tourFinding() },
+  { title:["Fix it", "أصلحها"],
+    text:() => T("CodeShield drafts the fixed code: the value is passed as a parameter, so the database never treats it as SQL. You can edit the fix before checking it.",
+                 "كودشيلد يجهّز الكود المعدَّل: القيمة تُمرَّر كمعامل منفصل، فقاعدة البيانات ما تعاملها كأمر SQL. وتقدر تعدّل الإصلاح قبل التحقق منه."),
+    run:() => {}, target:() => { const el = tourFinding(); return el && el.querySelector(".box.lab"); } },
+  { title:["Prove it", "أثبت الإصلاح"],
+    text:() => T("The Proof Lab re-scans both versions: the original FAILS (the flaw is real), the fixed code PASSES all 23 rules. Only then is the fix marked verified, with timestamped evidence.",
+                 "مختبر الإثبات يعيد فحص النسختين: الأصل يفشل (يعني الثغرة حقيقية)، والمعدَّل ينجح بكل القواعد الـ٢٣. وبعدها بس يصير الإصلاح «مُتحقَّق منه»، مع دليل مسجّل بالوقت."),
+    run:() => { const f = tourSqli(); if (f){ verifyFinding(f); rerenderFinding(f.id); const el = tourFinding(); if (el) el.classList.add("open"); } },
+    target:() => { const el = tourFinding(); return el && el.querySelector(".proof-steps"); } },
+  { title:["Your turn", "دورك"],
+    text:() => T("Find it, fix it, prove it. Try your own code, scan a GitHub repository, or learn in the Academy.",
+                 "اكتشفها، أصلحها، وأثبت الإصلاح. جرّب كودك أنت، أو افحص مستودع GitHub، أو تعلّم في الأكاديمية."),
+    run:() => {}, target:() => null,
+    extra:() => `<div class="tour-links"><button class="btn soft sm" data-tour="own">${T("Try my own code", "أجرّب كودي")}</button><button class="btn soft sm" data-tour="github">GitHub</button><button class="btn soft sm" data-tour="learn">${T("Academy", "الأكاديمية")}</button></div>` }
+];
+function tourFocus(el){
+  if (tour.focus) tour.focus.classList.remove("tour-focus");
+  tour.focus = el || null;
+  if (el){ el.classList.add("tour-focus"); el.scrollIntoView({ behavior:"smooth", block:"start" }); }   // just under the header, clear of the step card
 }
+function tourRender(){
+  const s = TOUR[tour.i], n = TOUR.length;
+  tour.el.innerHTML = `
+    <div class="tour-top"><span class="tour-step">${T("Step", "خطوة")} ${tour.i + 1} / ${n}</span>
+      <div class="tour-dots">${TOUR.map((_, k) => `<span class="${k === tour.i ? "on" : k < tour.i ? "done" : ""}"></span>`).join("")}</div>
+      <button class="tour-x" data-tour="close" aria-label="${T("Close demo", "إغلاق العرض")}">✕</button></div>
+    <h3>${T(s.title[0], s.title[1])}</h3>
+    <p>${esc(s.text())}</p>
+    ${s.extra ? s.extra() : ""}
+    <div class="tour-nav">
+      <button class="btn sm" data-tour="back" ${tour.i ? "" : "disabled"}>${T("Back", "السابق")}</button>
+      <button class="btn primary sm" data-tour="next">${tour.i === n - 1 ? T("Finish", "إنهاء") : T("Next", "التالي")}</button>
+    </div>`;
+  tourFocus(s.target());
+}
+function tourGo(i){
+  if (i < 0 || i >= TOUR.length) return;
+  if (i < tour.i) for (let k = 0; k <= i; k++) TOUR[k].run();   // going back: replay quietly up to that step
+  else for (let k = tour.i + 1; k <= i; k++) TOUR[k].run();
+  tour.i = i; tourRender();
+}
+function tourClose(){
+  tourFocus(null);
+  if (tour.el){ tour.el.remove(); tour.el = null; }
+  tour.i = -1;
+  if (location.hash === "#demo") history.replaceState(null, "", "#scanner");
+}
+function demo(){
+  if (!tour.el){
+    tour.el = document.createElement("div"); tour.el.className = "tour"; tour.el.setAttribute("role", "dialog"); tour.el.setAttribute("aria-live", "polite");
+    document.body.appendChild(tour.el);
+  }
+  $("welcome").classList.remove("show");   // the demo takes over; the welcome card can wait for a normal visit
+  tour.i = -1; tourGo(0);
+}
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-tour]"); if (!b) return;
+  const a = b.dataset.tour;
+  if (a === "next") tour.i === TOUR.length - 1 ? tourClose() : tourGo(tour.i + 1);
+  else if (a === "back") tourGo(tour.i - 1);
+  else if (a === "close") tourClose();
+  else if (a === "own"){ tourClose(); go("scanner"); $("codeInput").value = ""; state.scans.scan = null; renderScanFindings(); $("codeInput").focus(); }
+  else { tourClose(); go(a); }
+});
+document.addEventListener("keydown", e => {
+  if (!tour.el || /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName)) return;
+  const rtl = document.documentElement.dir === "rtl";
+  if (e.key === "Escape") tourClose();
+  else if (e.key === "Enter" || e.key === (rtl ? "ArrowLeft" : "ArrowRight")){ e.preventDefault(); tour.i === TOUR.length - 1 ? tourClose() : tourGo(tour.i + 1); }
+  else if (e.key === (rtl ? "ArrowRight" : "ArrowLeft")){ e.preventDefault(); tourGo(tour.i - 1); }
+});
+
+/* ---------------- share a scan ----------------
+   The pasted code travels inside the link's #fragment, which browsers never send to a server. */
+const SHARE_MAX = 8000;
+const b64url = s => { const b = new TextEncoder().encode(s); let bin = ""; for (let i = 0; i < b.length; i++) bin += String.fromCharCode(b[i]); return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""); };
+const unb64url = s => new TextDecoder().decode(Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0)));
+function shareBar(scan){
+  if (!scan || scan.source !== "paste") return "";
+  return `<div class="sharebar"><button class="btn soft sm" data-action="share-scan">🔗 ${T("Share this scan", "شارك هذا الفحص")}</button>
+    <span class="note">${T("The code goes inside the link itself, not to any server. Don't share it if the code holds real secrets.", "الكود ينحط داخل الرابط نفسه، ما يروح لأي خادم. لا تشاركه إذا الكود فيه أسرار حقيقية.")}</span></div>`;
+}
+function shareScan(){
+  const scan = state.scans.scan; if (!scan || !scan.code) return;
+  if (scan.code.length > SHARE_MAX){ toast(T(`Too long to share (over ${SHARE_MAX} characters).`, `الكود أطول من إنه ينشارك (أكثر من ${SHARE_MAX} حرف).`)); return; }
+  const url = `${location.origin}${location.pathname}#scan=${b64url(scan.code)}&l=${scan.lang || ""}`;
+  const done = () => toast(T("Link copied — anyone who opens it sees this scan.", "تم نسخ الرابط ✓ أي أحد يفتحه يشوف هذا الفحص."));
+  if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done, () => prompt(T("Copy this link:", "انسخ هذا الرابط:"), url));
+  else prompt(T("Copy this link:", "انسخ هذا الرابط:"), url);
+}
+function openShared(){
+  const m = location.hash.match(/^#scan=([A-Za-z0-9_-]+)(?:&l=(\w*))?/); if (!m) return false;
+  try {
+    const code = unb64url(m[1]); go("scanner", false);
+    $("codeInput").value = code; if (m[2]) $("langHint").value = m[2];
+    runScan(); toast(T("Opened a shared scan.", "انفتح فحص مُشارَك معك."));
+  } catch (e) { go("scanner", false); toast(T("This shared link is damaged.", "رابط المشاركة هذا تالف.")); }
+  return true;
+}
+
+/* ---------------- vulnerable vs safe example for a rule (from the labelled test set) ---------------- */
+function ruleExamplesHTML(id){
+  const bad = CASES.find(c => c.rule === id && c.vuln && !c.flow) || CASES.find(c => c.rule === id && c.vuln);
+  if (!bad) return "";
+  const good = CASES.find(c => c.rule === id && !c.vuln && c.lang === bad.lang) || CASES.find(c => c.rule === id && !c.vuln);
+  const langName = l => ({ python:"Python", javascript:"JavaScript", php:"PHP", ruby:"Ruby", shell:"Shell" }[l] || l);
+  return `<div class="rule-ex">
+    <div class="ex bad"><div class="label">✗ ${T("Vulnerable", "مصاب")} <span class="note">${langName(bad.lang)}</span></div><div class="code ltr">${esc(bad.code)}</div></div>
+    ${good ? `<div class="ex good"><div class="label">✓ ${T("Safe", "آمن")} <span class="note">${langName(good.lang)}</span></div><div class="code ltr">${esc(good.code)}</div></div>` : ""}
+  </div>
+  <p class="note" style="margin-top:6px">${T("Both come from CodeShield's labelled test set: the engine must flag the first and stay quiet on the second.", "المثالين من مجموعة اختبار كودشيلد: لازم المحرك يكتشف الأول ويسكت عن الثاني.")}</p>`;
+}
+
+/* ---------------- security score over time (dashboard) ---------------- */
+function scoreChartHTML(rows){
+  const pts = rows.slice(0, 12).reverse();
+  if (pts.length < 2) return `<div class="empty">${T("Run at least two scans to see your progress.", "سوّ فحصين على الأقل عشان يطلع لك تطوّرك.")}</div>`;
+  const W = 480, H = 210, L = 36, R = 16, Tp = 14, B = 34, xs = i => L + i * (W - L - R) / (pts.length - 1), ys = v => Tp + (1 - v / 100) * (H - Tp - B);
+  const col = v => v >= 80 ? "var(--success)" : v >= 50 ? "var(--warning)" : "var(--danger)";
+  const line = pts.map((r, i) => `${i ? "L" : "M"}${xs(i).toFixed(1)},${ys(r.score).toFixed(1)}`).join(" ");
+  const area = `${line} L${xs(pts.length - 1).toFixed(1)},${H - B} L${L},${H - B} Z`;
+  const d = r => new Date(r.at).toLocaleDateString(state.lang === "ar" ? "ar-SA" : "en-GB", { day:"numeric", month:"short" });
+  const first = pts[0].score, last = pts[pts.length - 1].score, diff = last - first;
+  return `<svg class="score-chart" viewBox="0 0 ${W} ${H}" dir="ltr" role="img" aria-label="${T("Security score per scan", "مؤشر الأمان لكل فحص")}">
+      <defs><linearGradient id="scoreFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".28"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs>
+      ${[0, 50, 100].map(v => `<line x1="${L}" x2="${W - R}" y1="${ys(v)}" y2="${ys(v)}" class="grid"/><text x="${L - 6}" y="${ys(v) + 4}" class="axis" text-anchor="end">${v}</text>`).join("")}
+      <path d="${area}" fill="url(#scoreFill)"/><path d="${line}" class="line"/>
+      ${pts.map((r, i) => `<circle cx="${xs(i)}" cy="${ys(r.score)}" r="6" fill="${col(r.score)}"><title>${d(r)}: ${r.score}</title></circle>
+        <text x="${xs(i)}" y="${H - 10}" class="axis" text-anchor="${i === 0 ? "start" : i === pts.length - 1 ? "end" : "middle"}">${pts.length <= 5 || i % 3 === 0 || i === pts.length - 1 ? d(r) : ""}</text>`).join("")}
+    </svg>
+    <p class="note">${diff > 0 ? T(`Up ${diff} points from your first scan here. Keep going!`, `تحسّنت ${diff} نقطة من أول فحص هنا. استمر!`)
+      : diff < 0 ? T(`Down ${-diff} points from your first scan here — check the newest findings.`, `نزلت ${-diff} نقطة من أول فحص هنا. راجع آخر الثغرات.`)
+      : T("Same score as your first scan here.", "نفس المؤشر من أول فحص هنا.")}</p>`;
+}
+
+/* ---------------- pre-launch checklist ---------------- */
+const CHECKS = [
+  { group:["Secrets & settings", "الأسرار والإعدادات"], items:[
+    { id:"secrets", rule:"SECRET", en:"No passwords, API keys or tokens are written in the code — they come from environment variables.", ar:"ما فيه كلمات مرور أو مفاتيح أو توكنات مكتوبة في الكود، وكلها تجي من متغيرات البيئة." },
+    { id:"gitignore", en:"The .env file (and any key files) are listed in .gitignore and never pushed.", ar:"ملف ‎.env‎ وأي ملفات مفاتيح مضافة في ‎.gitignore‎ وما تنرفع أبدًا." },
+    { id:"debug", rule:"DEBUG", en:"Debug mode is off in production.", ar:"وضع التصحيح (Debug) مقفول في النسخة المنشورة." },
+    { id:"perms", rule:"PERMS", en:"Files have the narrowest permissions they need (no 777).", ar:"صلاحيات الملفات أقل شي محتاجته (بدون 777)." } ] },
+  { group:["Data & input", "البيانات والمدخلات"], items:[
+    { id:"sql", rule:"SQLI", en:"Every database query uses parameters, never string building.", ar:"كل استعلامات قاعدة البيانات معلمنة، وما فيه دمج نصوص." },
+    { id:"xss", rule:"XSS", en:"User input is escaped before it is shown on a page.", ar:"مدخلات المستخدم تنرمّز (escape) قبل ما تنعرض في الصفحة." },
+    { id:"upload", rule:"UPLOAD", en:"Uploaded files are checked for type, size and name.", ar:"الملفات المرفوعة يُتحقّق من نوعها وحجمها واسمها." },
+    { id:"paths", rule:"PATH", en:"File paths built from user input are validated.", ar:"مسارات الملفات اللي تجي من المستخدم يُتحقّق منها." } ] },
+  { group:["Connections & sessions", "الاتصال والجلسات"], items:[
+    { id:"https", rule:"CLEARTEXT", en:"The whole site is served over HTTPS.", ar:"الموقع كامل يشتغل على HTTPS." },
+    { id:"tls", rule:"TLSOFF", en:"Certificate checks are never turned off.", ar:"التحقق من الشهادات ما ينطفي أبدًا." },
+    { id:"cookies", rule:"COOKIE", en:"Session cookies are Secure, HttpOnly and SameSite.", ar:"كعكات الجلسة فيها Secure و HttpOnly و SameSite." },
+    { id:"cors", rule:"CORS", en:"CORS only allows your own sites, not *.", ar:"CORS يسمح لمواقعك بس، مو للكل (*)." },
+    { id:"hash", rule:"WEAKHASH", en:"Passwords are stored with a slow hash (bcrypt or Argon2), not MD5 or SHA-1.", ar:"كلمات المرور تنخزن بتجزئة بطيئة (bcrypt أو Argon2)، مو MD5 أو SHA-1." },
+    { id:"jwt", rule:"JWT", en:"Token signatures are always verified.", ar:"توقيع التوكنات يُتحقّق منه دائمًا." } ] },
+  { group:["Before launch", "قبل الإطلاق"], items:[
+    { id:"scan", en:"The whole project was scanned with CodeShield and the high findings are fixed and verified.", ar:"المشروع كامل انفحص بكودشيلد، والثغرات العالية انصلحت وانتحقّق منها." },
+    { id:"deps", en:"Libraries are up to date (CodeShield doesn't check this — use your package manager's audit).", ar:"المكتبات محدّثة (كودشيلد ما يفحص هذا، استخدم أمر audit حق مدير الحزم)." },
+    { id:"logs", en:"Error logs don't contain passwords or personal data.", ar:"سجلات الأخطاء ما فيها كلمات مرور أو بيانات شخصية." },
+    { id:"backup", en:"There is a backup, and you have tried restoring it once.", ar:"فيه نسخة احتياطية، وجرّبت ترجعها مرة وحدة على الأقل." } ] }
+];
+let ticks = {};
+try { ticks = JSON.parse(store.get("checklist") || "{}"); } catch (e) { ticks = {}; }
+function renderChecklist(){
+  const all = CHECKS.flatMap(g => g.items), done = all.filter(i => ticks[i.id]).length, pct = Math.round(done / all.length * 100);
+  $("checkBody").innerHTML = `
+    <div class="card card-pad check-progress">
+      <div class="row" style="justify-content:space-between"><b>${T(`${done} of ${all.length} checked`, `${done} من ${all.length} جاهزة`)}</b><span class="note">${pct}%</span></div>
+      <div class="stack" style="margin-top:8px"><span style="width:${pct}%;background:${pct === 100 ? "var(--success)" : "var(--accent)"}"></span></div>
+      ${pct === 100 ? `<p style="margin-top:8px;color:var(--success);font-weight:700">🎉 ${T("Ready to launch!", "جاهز للنشر!")}</p>` : ""}
+    </div>
+    ${CHECKS.map(g => `<div class="card card-pad check-group"><h3>${T(g.group[0], g.group[1])}</h3>
+      ${g.items.map(i => `<label class="check-item${ticks[i.id] ? " on" : ""}"><input type="checkbox" data-check="${i.id}" ${ticks[i.id] ? "checked" : ""}>
+        <span class="check-text">${esc(T(i.en, i.ar))}</span>
+        ${i.rule ? `<button class="btn sm" data-action="rule-link" data-rule-id="${i.rule}">${T("Learn", "اعرف أكثر")}</button>` : ""}</label>`).join("")}
+    </div>`).join("")}
+    <div class="row" style="margin-top:14px"><button class="btn primary sm" data-go="scanner">${T("Scan my code now", "افحص كودي الحين")}</button>
+      <button class="btn sm" data-action="check-reset">${T("Untick all", "شيل كل العلامات")}</button></div>`;
+}
+document.addEventListener("change", e => {
+  const id = e.target.dataset && e.target.dataset.check; if (!id) return;
+  ticks[id] = e.target.checked; if (!ticks[id]) delete ticks[id];
+  store.set("checklist", JSON.stringify(ticks)); renderChecklist();
+});
 
 /* ---------------- wiring ---------------- */
 function rerenderAll(){
   renderScanFindings(); renderRepo(); renderRules(); renderBenchmark();
   if (academy){ renderHomeProgress(); if ($("learn").classList.contains("active")) academy.render(); }
   if ($("dashboard").classList.contains("active")) renderDashboard();
+  if ($("checklist").classList.contains("active")) renderChecklist();
 }
 
 $("langBtn").addEventListener("click", () => setLang(state.lang === "ar" ? "en" : "ar"));
@@ -582,6 +848,12 @@ $("repoBtn").addEventListener("click", runRepo);
 $("repoInput").addEventListener("keydown", e => { if (e.key === "Enter") runRepo(); });
 document.querySelectorAll("[data-repo]").forEach(b => b.addEventListener("click", () => { $("repoInput").value = b.dataset.repo; runRepo(); }));
 $("ruleFilter").addEventListener("input", renderRules);
+document.addEventListener("input", e => {
+  const t = e.target.dataset && e.target.dataset.filterQ; if (!t) return;
+  state.filter[t].q = e.target.value; const pos = e.target.selectionStart;
+  rerenderTarget(t);
+  const box = document.querySelector(`[data-filter-q="${t}"]`); if (box){ box.focus(); box.setSelectionRange(pos, pos); }
+});
 $("demoBtn").addEventListener("click", demo);
 $("histClear").addEventListener("click", async () => {
   if (!confirm(T("Delete all saved scans from this browser? This cannot be undone.", "حذف كل الفحوصات المحفوظة من هذا المتصفح؟ لا يمكن التراجع."))) return;
@@ -591,7 +863,7 @@ $("histClear").addEventListener("click", async () => {
 $("histExport").addEventListener("click", async () => {
   try { downloadJSON({ tool:"CodeShield", exported_at:new Date().toISOString(), scans:await db.all() }, "codeshield-history.json"); } catch (e) {}
 });
-window.addEventListener("popstate", () => go(location.hash.slice(1), false));
+window.addEventListener("popstate", () => location.hash === "#demo" ? demo() : openShared() || go(location.hash.slice(1), false));
 
 /* local upload: picker, folder picker, drag & drop */
 $("fileInput").addEventListener("change", e => { scanLocal(e.target.files); e.target.value = ""; });
@@ -689,14 +961,14 @@ $("statCwe").textContent = new Set(RULES.map(r => r.cwe)).size;
 setTheme(store.get("theme") || "dark");
 academy = initAcademy({ $, T, esc, toast, askName:() => askName(false) });
 setLang(store.get("lang") || "ar");
-go(location.hash.slice(1) || "home", false);
+if (location.hash === "#demo") demo(); else if (!openShared()) go(location.hash.slice(1) || "home", false);
 
 loadProgress().then(async () => {
   renderHomeProgress();
   if ($("learn").classList.contains("active")) academy.render();
   let welcomed = false;
   try { welcomed = await kv.get("welcomed"); } catch (e) { welcomed = true; }
-  if (!welcomed) askName(true);
+  if (!welcomed && !tour.el) askName(true);
 });
 
 /* exposed for debugging in the console */

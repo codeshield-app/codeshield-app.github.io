@@ -1,10 +1,10 @@
 /* CodeShield — service worker: lets the app open and scan offline (e.g. on a weak exhibition network).
    App files are cached; GitHub requests always go to the network. */
-const VERSION = "codeshield-v0.5.0";
+const VERSION = "codeshield-v0.5.1";
 const APP = [
   "./", "index.html", "css/style.css", "icon.svg", "manifest.webmanifest", "og-image.jpg",
   "js/app.js", "js/engine.js", "js/rules.js", "js/tests.js", "js/patch.js", "js/taint.js",
-  "js/db.js", "js/github.js", "js/report.js", "js/samples.js", "js/benchmark.js", "js/export.js", "js/progress.js", "js/academy.js"
+  "js/db.js", "js/github.js", "js/report.js", "js/samples.js", "js/benchmark.js", "js/export.js", "js/progress.js", "js/academy.js", "js/attacks.js"
 ];
 
 self.addEventListener("install", e => {
