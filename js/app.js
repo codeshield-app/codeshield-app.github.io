@@ -33,7 +33,15 @@ function applyI18n(){
     if (el.dataset.phAr === undefined) el.dataset.phAr = el.placeholder;
     el.placeholder = state.lang === "ar" ? el.dataset.phAr : el.dataset.phEn;
   });
+  document.querySelectorAll("[data-aria-en]").forEach(el => {
+    if (el.dataset.ariaAr === undefined) el.dataset.ariaAr = el.getAttribute("aria-label") || "";
+    el.setAttribute("aria-label", state.lang === "ar" ? el.dataset.ariaAr : el.dataset.ariaEn);
+  });
 }
+document.addEventListener("click", e => {
+  const s = e.target.closest(".skip-link"); if (!s) return;
+  e.preventDefault(); document.querySelector("main")?.focus();
+});
 function setLang(lang){
   state.lang = lang; store.set("lang", lang);
   document.documentElement.lang = lang;

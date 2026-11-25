@@ -42,6 +42,7 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<a class="skip-link" href="#main" data-en="Skip to content">تخطَّ إلى المحتوى</a>
 <div class="grid-bg"></div>
 
 <header>
@@ -60,13 +61,13 @@
     <button class="nav-btn" data-go="about" data-en="About">عن المشروع</button>
   </nav>
   <div class="header-actions">
-    <button class="icon-btn" id="langBtn" title="Language / اللغة">EN</button>
-    <button class="icon-btn" id="themeBtn" title="Theme / المظهر">◐</button>
-    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Menu">☰</button>
+    <button class="icon-btn" id="langBtn" title="Language / اللغة" aria-label="Language / اللغة">EN</button>
+    <button class="icon-btn" id="themeBtn" title="Theme / المظهر" aria-label="Theme / المظهر">◐</button>
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="القائمة" data-aria-en="Menu">☰</button>
   </div>
 </header>
 
-<main>
+<main id="main" tabindex="-1">
 <!-- =============================== HOME =============================== -->
 <section id="home" class="screen active"><div class="container">
   <div class="hero">
@@ -130,7 +131,7 @@
         </select>
         <button class="btn" id="clearBtn" data-en="Clear">مسح</button>
       </div>
-      <textarea class="code-input" id="codeInput" spellcheck="false" placeholder="// paste your code here…"></textarea>
+      <textarea class="code-input" id="codeInput" aria-label="الشيفرة المراد فحصها" data-aria-en="Code to scan" spellcheck="false" placeholder="// paste your code here…"></textarea>
       <div class="engine-note">
         <strong data-en="Honest limits:">الحدود بصراحة:</strong>
         <span data-en="deterministic rules plus a lightweight data-flow tracker that follows input through variable assignments within one file. It does not follow data through function calls, object fields or other files, so some flaws can still be missed. There is no machine-learning model — every result comes from an explicit, auditable rule.">قواعد حتمية مع متتبّع خفيف لتدفّق البيانات يتبع المدخل عبر إسناد المتغيرات داخل الملف الواحد. لا يتتبّع البيانات عبر استدعاء الدوال أو حقول الكائنات أو بين الملفات، لذلك قد تفوته بعض الثغرات. لا يوجد نموذج تعلّم آلي — كل نتيجة صادرة عن قاعدة صريحة قابلة للمراجعة.</span>
@@ -165,7 +166,7 @@
   <div class="card card-pad">
     <div class="label-h" data-en="From GitHub">من GitHub</div>
     <div class="toolbar" style="margin:0">
-      <input class="input" id="repoInput" placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false">
+      <input class="input" id="repoInput" type="url" aria-label="رابط مستودع GitHub" data-aria-en="GitHub repository URL" placeholder="https://github.com/owner/repo" autocomplete="off" spellcheck="false">
       <button class="btn primary" id="repoBtn" data-en="Scan repository">افحص المستودع</button>
     </div>
     <div class="examples">
@@ -175,7 +176,7 @@
       <button class="btn sm" data-repo="https://github.com/digininja/DVWA">DVWA</button>
     </div>
     <div class="progress"><span id="repoBar"></span></div>
-    <div class="progress-text" id="repoStatus">المستودعات العامة فقط. يسمح GitHub بنحو ٦٠ استعلامًا في الساعة من الشبكة الواحدة.</div>
+    <div class="progress-text" id="repoStatus" data-en="Public repositories only. GitHub allows about 60 requests per hour per network.">المستودعات العامة فقط. يسمح GitHub بنحو ٦٠ استعلامًا في الساعة من الشبكة الواحدة.</div>
   </div>
   <div class="card card-pad">
     <div class="label-h" data-en="From your computer">من جهازك</div>
@@ -247,7 +248,7 @@
   </div>
   <div class="rules-layout">
     <div class="card">
-      <div class="panel-title"><input class="input" id="ruleFilter" style="min-width:0" data-ph-en="Filter rules…" placeholder="ابحث في القواعد…"></div>
+      <div class="panel-title"><input class="input" id="ruleFilter" type="search" aria-label="ابحث في القواعد" data-aria-en="Filter rules" style="min-width:0" data-ph-en="Filter rules…" placeholder="ابحث في القواعد…"></div>
       <div class="rule-list" id="ruleList"></div>
     </div>
     <div class="card card-pad rule-detail" id="ruleDetail"></div>
