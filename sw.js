@@ -1,6 +1,6 @@
 /* CodeShield — service worker: lets the app open and scan offline (e.g. on a weak exhibition network).
    App files are cached; GitHub requests always go to the network. */
-const VERSION = "codeshield-v0.5.4";
+const VERSION = "codeshield-v0.5.5";
 const APP = [
   "./", "index.html", "css/style.css", "icon.svg", "manifest.webmanifest", "og-image.jpg",
   "js/app.js", "js/engine.js", "js/rules.js", "js/tests.js", "js/patch.js", "js/taint.js",
