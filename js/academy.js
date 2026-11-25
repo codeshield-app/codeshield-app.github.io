@@ -291,7 +291,7 @@ export function initAcademy(ui){
     else if (act === "line" && game && game.phase === "line"){ game.picked = Number(a.dataset.n); game.phase = "type"; renderBody(); }
     else if (act === "type" && game && game.phase === "type"){ game.chosen = a.dataset.rule; finishQuestion(false); }
     else if (act === "next") next();
-    else if (act === "open"){ lessonOpen = a.dataset.rule; lessonQuiz = null; tab = "lessons"; renderBody(); document.getElementById("learn").scrollIntoView({ block:"start" }); }
+    else if (act === "open"){ lessonOpen = a.dataset.rule; lessonQuiz = null; tab = "lessons"; renderBody(); (document.getElementById("acadBody") || document.getElementById("learn")).scrollIntoView({ block:"start" }); }
     else if (act === "lessons"){ lessonOpen = null; lessonQuiz = null; renderBody(); }
     else if (act === "quiz" && lessonQuiz && !lessonQuiz.chosen){ lessonQuiz.chosen = a.dataset.k; if (a.dataset.k === "safe") track("lesson", { rule:lessonOpen }); renderBody(); }
     else if (act === "retry"){ lessonQuiz = null; renderBody(); }

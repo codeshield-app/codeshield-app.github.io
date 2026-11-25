@@ -636,3 +636,12 @@ html[dir="ltr"] .booth-code .tag{ direction:ltr; }
   .booth-code{ flex:none; }
   .booth-code .tag{ display:none; } .booth-top{ flex-wrap:wrap; } .booth-brand small{ display:none; }
 }
+
+/* finding -> academy lesson link, and the "about the developer" card */
+.lesson-link{ margin:4px 0 12px; }
+.dev-card{ display:flex; gap:22px; align-items:center; margin-top:18px; }
+.dev-mono{ flex:none; width:84px; height:84px; border-radius:50%; display:grid; place-items:center; font:600 30px Georgia, "Times New Roman", serif; letter-spacing:.04em; color:#e6bfa8; background:radial-gradient(circle at 60% 30%, #3b2d41, #15131f 70%); border:1px solid rgba(232,190,170,.35); direction:ltr; }
+.dev-body h3{ margin:4px 0 6px; }
+.dev-body p{ color:var(--muted); }
+.dev-links{ margin-top:12px; flex-wrap:wrap; gap:8px; }
+@media (max-width:640px){ .dev-card{ flex-direction:column; align-items:flex-start; } }

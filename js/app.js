@@ -211,6 +211,7 @@ function findingHTML(f, open){
         </div>` : `<div class="code-label">${T("Vulnerable line", "السطر المصاب")}</div>`}
       <div class="finding-code">${esc(f.snippet)}</div>
       <p class="why">${esc(T(f.why_en, f.why_ar))}</p>
+      <button class="btn soft sm lesson-link" data-go="learn" data-ac="open" data-rule="${f.ruleId}">📘 ${T("Learn this vulnerability in the Academy", "تعلّم هذه الثغرة في الأكاديمية")}</button>
       ${attackHTML(f)}
       <div class="box fix"><div class="label">${T("Suggested fix", "الإصلاح المقترح")}</div><p>${esc(T(f.fix_en, f.fix_ar))}</p></div>
       ${labHTML(f)}
