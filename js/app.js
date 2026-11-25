@@ -11,6 +11,7 @@ import { loadProgress, onProgress, track, setName, progress, levelOf } from "./p
 import { kv } from "./db.js";
 import { initAcademy } from "./academy.js";
 import { ATTACKS } from "./attacks.js";
+import { initBooth } from "./booth.js";
 
 /* ---------------- state ---------------- */
 const state = { lang:"ar", theme:"dark", scans:{ scan:null, repo:null }, filter:{ scan:{ sev:"ALL", q:"" }, repo:{ sev:"ALL", q:"" } } };
@@ -61,7 +62,7 @@ function go(screen, push = true){
   window.scrollTo({ top:0 });
 }
 
-let toastTimer;
+let toastTimer, booth = null;
 function toast(msg){
   const el = $("toast"); el.textContent = msg; el.classList.add("show");
   clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove("show"), 2800);
@@ -832,6 +833,7 @@ function rerenderAll(){
   if (academy){ renderHomeProgress(); if ($("learn").classList.contains("active")) academy.render(); }
   if ($("dashboard").classList.contains("active")) renderDashboard();
   if ($("checklist").classList.contains("active")) renderChecklist();
+  if (booth && booth.isOpen()) booth.open();
 }
 
 $("langBtn").addEventListener("click", () => setLang(state.lang === "ar" ? "en" : "ar"));
@@ -863,7 +865,7 @@ $("histClear").addEventListener("click", async () => {
 $("histExport").addEventListener("click", async () => {
   try { downloadJSON({ tool:"CodeShield", exported_at:new Date().toISOString(), scans:await db.all() }, "codeshield-history.json"); } catch (e) {}
 });
-window.addEventListener("popstate", () => location.hash === "#demo" ? demo() : openShared() || go(location.hash.slice(1), false));
+window.addEventListener("popstate", () => location.hash === "#booth" ? booth.open() : (booth.isOpen() && booth.close(), location.hash === "#demo" ? demo() : openShared() || go(location.hash.slice(1), false)));
 
 /* local upload: picker, folder picker, drag & drop */
 $("fileInput").addEventListener("change", e => { scanLocal(e.target.files); e.target.value = ""; });
@@ -961,14 +963,16 @@ $("statCwe").textContent = new Set(RULES.map(r => r.cwe)).size;
 setTheme(store.get("theme") || "dark");
 academy = initAcademy({ $, T, esc, toast, askName:() => askName(false) });
 setLang(store.get("lang") || "ar");
-if (location.hash === "#demo") demo(); else if (!openShared()) go(location.hash.slice(1) || "home", false);
+booth = initBooth({ T, esc, go });
+if (location.hash === "#booth"){ go("home", false); booth.open(); }
+else if (location.hash === "#demo") demo(); else if (!openShared()) go(location.hash.slice(1) || "home", false);
 
 loadProgress().then(async () => {
   renderHomeProgress();
   if ($("learn").classList.contains("active")) academy.render();
   let welcomed = false;
   try { welcomed = await kv.get("welcomed"); } catch (e) { welcomed = true; }
-  if (!welcomed && !tour.el) askName(true);
+  if (!welcomed && !tour.el && !booth.isOpen()) askName(true);
 });
 
 /* exposed for debugging in the console */

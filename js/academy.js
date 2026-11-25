@@ -152,6 +152,8 @@ export function initAcademy(ui){
       game.phase = "done";
       const res = track("round", { perfect:game.score === game.qs.length });
       game.newBadges = res && res.newBadges || [];
+      const LG = LEVELS_GAME[game.level];   // booth mode listens for this to offer the hall of fame
+      window.dispatchEvent(new CustomEvent("codeshield:round", { detail:{ score:game.score, total:game.qs.length, xp:game.xp, level:game.level, levelEn:LG.en, levelAr:LG.ar } }));
     } else {
       game.phase = "line"; game.picked = null; game.chosen = null; game.opts = options(game.qs[game.i].rule); startTimer();
     }
